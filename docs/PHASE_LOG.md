@@ -133,3 +133,24 @@
 - Replace mock MCP module with real TypeScript MCP client using OAuth 2.1 + PKCE.
 - Test all 3 flows end-to-end with live Swiggy data (real restaurants, real cart, real orders).
 - No architecture changes needed — only the MCP layer is swapped.
+
+### Started Implementataion 
+
+## Phase 1 – Backend & frontend skeleton
+- Implemented a Node.js + TypeScript backend using Express.
+- Added placeholder API routes:
+  - POST /api/surprise
+  - POST /api/mood
+  - POST /api/schedule
+- Implemented a simple static frontend served from the backend:
+  - index.html + app.js + style.css
+  - Three buttons call the corresponding API endpoints and show JSON responses.
+- Added basic logging in backend routes to print incoming request bodies:
+  - [Surprise] request body
+  - [Mood] request body
+  - [Schedule] request body
+- Verified end-to-end flow:
+  - Backend running on http://localhost:3000
+  - /health returns {"status":"ok"}
+  - Frontend buttons successfully call backend APIs. 
+  - 
