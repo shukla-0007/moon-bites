@@ -62,7 +62,7 @@
 
 ## Phase 1 – Skeleton Web App + Backend
 
-**Status:** Not Started
+**Status:** ✅ Complete
 
 **Planned Scope:**
 - Minimal Node.js + TypeScript backend:
@@ -79,7 +79,7 @@
 
 ## Phase 2 – Decision Engine with Mocked Data
 
-**Status:** Not Started
+**Status:** ✅ Complete
 
 **Planned Scope:**
 - Implement Surprise Me logic: take constraints, score mock restaurants/dishes, return best pick.
@@ -134,23 +134,48 @@
 - Test all 3 flows end-to-end with live Swiggy data (real restaurants, real cart, real orders).
 - No architecture changes needed — only the MCP layer is swapped.
 
-### Started Implementataion 
+## Phase 1 Execution Log
 
-## Phase 1 – Backend & frontend skeleton
-- Implemented a Node.js + TypeScript backend using Express.
-- Added placeholder API routes:
-  - POST /api/surprise
-  - POST /api/mood
-  - POST /api/schedule
-- Implemented a simple static frontend served from the backend:
-  - index.html + app.js + style.css
-  - Three buttons call the corresponding API endpoints and show JSON responses.
-- Added basic logging in backend routes to print incoming request bodies:
-  - [Surprise] request body
-  - [Mood] request body
-  - [Schedule] request body
-- Verified end-to-end flow:
-  - Backend running on http://localhost:3000
-  - /health returns {"status":"ok"}
-  - Frontend buttons successfully call backend APIs. 
-  - 
+- Implemented Node.js + TypeScript backend using Express.
+- Added 3 placeholder API routes: POST /api/surprise, /api/mood, /api/schedule.
+- Implemented static frontend served from backend (index.html + app.js + style.css).
+- Verified end-to-end: backend on :3000, /health → {"status":"ok"}.
+- Prisma schema created (User, Preferences, OrderHistory); migrated to SQLite.
+
+---
+
+## Phase 2 Execution Log
+
+### Decision Engine
+- Created `src/engine/types.ts` – shared types (Dish, Restaurant, UserConstraints, DishRecommendation, SurpriseResult, ScheduledMeal).
+- Created `src/engine/scorer.ts` – 100-point scoring function (rating 40%, distance 20%, price 20%, spice 20%).
+- Created `src/engine/surpriseEngine.ts` – filter → score → ±5% jitter → pick + 2 alternatives.
+- Created `src/engine/moodEngine.ts` – 6 moods (comfort, healthy, celebration, workday, cheat-meal, high-protein), tag+budget mapping, returns top 5.
+- Created `src/engine/scheduleEngine.ts` – per-day surprise picks with variety constraint (no repeated dishes).
+
+### Mock Data
+- Expanded `mockRestaurants.ts` from 5 → 8 restaurants, added 3 dishes each (24 total).
+- Dishes have `spiceLevel`, `isVeg`, and `tags` aligned to mood/schedule engine.
+
+### Prisma / SQLite
+- Installed prisma v7, @prisma/client, @prisma/adapter-better-sqlite3, better-sqlite3.
+- Created `prisma/schema.prisma` with User, Preferences, OrderHistory models.
+- Ran migration → `prisma/dev.db` created.
+- Created `src/lib/prisma.ts` singleton (Prisma v7 adapter pattern).
+- `/api/surprise` now saves every pick to OrderHistory; response includes `saved: true`.
+
+### Routes Refactored
+- All 3 routes are thin wrappers — validation + engine call + HTTP response only.
+- Surprise route now async (DB write).
+
+### Frontend Full Redesign
+- `index.html` – semantic tab nav (Surprise/Mood/Schedule), rich form controls.
+- `style.css` – Inter font, dark navy bg (#0a0f1e), orange gradient accent, glassmorphism cards, full component library.
+- `app.js` – tab switching, form state, card rendering with delivery times + veg dots, loading/error states, reshuffle button.
+
+### Verified
+- `/health` → `{"status":"ok"}`
+- `/api/surprise` with budget+veg+spiceLevel → pick (score 92.8) + 2 alternatives + `saved: true`
+- `/api/mood` with mood=comfort → 5 ranked dishes from 3+ restaurants
+- `/api/schedule` with Mon/Tue/Wed → 3-day plan with variety (different dish each day)
+- Frontend: tab switching, cards render, reshuffle works

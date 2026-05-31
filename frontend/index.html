@@ -3,28 +3,166 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Moon Bites</title>
+  <title>Moon Bites – AI-Powered Food Decisions</title>
+  <meta name="description" content="Moon Bites is your AI-powered Swiggy ordering assistant. Let it decide what you eat — on demand or on a schedule." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
-  <header>
-    <h1>Moon Bites</h1>
-    <p>AI-powered Swiggy ordering assistant</p>
-  </header>
+  <div class="app-shell">
 
-  <main>
-    <section id="modes">
-      <button id="btn-surprise">Surprise Me</button>
-      <button id="btn-mood">Mood-based</button>
-      <button id="btn-schedule">Schedule</button>
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo">
+        <span class="logo-icon">🌙</span>
+        <span class="logo-text">Moon Bites</span>
+      </div>
+      <p class="tagline">Your AI-powered food decision engine</p>
+    </header>
+
+    <!-- Tab Navigation -->
+    <nav class="tab-bar" role="tablist">
+      <button class="tab-btn active" data-tab="surprise" role="tab" aria-selected="true" id="tab-btn-surprise">
+        <span class="tab-icon">🎲</span>
+        <span class="tab-label">Surprise Me</span>
+      </button>
+      <button class="tab-btn" data-tab="mood" role="tab" aria-selected="false" id="tab-btn-mood">
+        <span class="tab-icon">😊</span>
+        <span class="tab-label">Mood</span>
+      </button>
+      <button class="tab-btn" data-tab="schedule" role="tab" aria-selected="false" id="tab-btn-schedule">
+        <span class="tab-icon">📅</span>
+        <span class="tab-label">Schedule</span>
+      </button>
+    </nav>
+
+    <!-- Tab Panels -->
+    <main class="tab-content">
+
+      <!-- ── Surprise Me Panel ──────────────────────────────────────── -->
+      <section id="tab-surprise" class="tab-panel active" role="tabpanel" aria-labelledby="tab-btn-surprise">
+        <div class="panel-card">
+          <h2>Surprise Me 🎲</h2>
+          <p class="panel-subtitle">Set your limits — we pick the perfect meal</p>
+
+          <!-- Budget -->
+          <div class="form-group">
+            <label for="budget-slider">
+              Budget per dish
+              <span class="value-badge" id="budget-display">₹300</span>
+            </label>
+            <input type="range" id="budget-slider" min="100" max="800" step="50" value="300" aria-label="Budget slider" />
+            <div class="range-labels"><span>₹100</span><span>₹800</span></div>
+          </div>
+
+          <!-- Veg/Non-Veg -->
+          <div class="form-group">
+            <label>Dietary preference</label>
+            <div class="toggle-group" role="group" aria-label="Dietary preference">
+              <button class="toggle-btn active" id="toggle-veg" aria-pressed="true">🌿 Veg Only</button>
+              <button class="toggle-btn" id="toggle-nonveg" aria-pressed="false">🍗 Non-Veg</button>
+            </div>
+          </div>
+
+          <!-- Spice Level -->
+          <div class="form-group">
+            <label>Spice level</label>
+            <div class="spice-group" role="group" aria-label="Spice level">
+              <button class="spice-btn active" data-level="1" aria-pressed="true">🌶️<br/><span>Mild</span></button>
+              <button class="spice-btn" data-level="2" aria-pressed="false">🌶️🌶️<br/><span>Medium</span></button>
+              <button class="spice-btn" data-level="3" aria-pressed="false">🌶️🌶️🌶️<br/><span>Spicy</span></button>
+            </div>
+          </div>
+
+          <button class="cta-btn" id="btn-surprise">
+            ✨ Surprise Me!
+          </button>
+        </div>
+      </section>
+
+      <!-- ── Mood Panel ─────────────────────────────────────────────── -->
+      <section id="tab-mood" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-mood">
+        <div class="panel-card">
+          <h2>What's your mood? 😊</h2>
+          <p class="panel-subtitle">Pick a vibe — we'll find the perfect match</p>
+
+          <div class="mood-grid" id="mood-grid" role="group" aria-label="Select your mood">
+            <button class="mood-chip" data-mood="comfort" id="mood-comfort">😌<span>Comfort</span></button>
+            <button class="mood-chip" data-mood="healthy" id="mood-healthy">🥗<span>Healthy</span></button>
+            <button class="mood-chip" data-mood="celebration" id="mood-celebration">🎉<span>Celebrate</span></button>
+            <button class="mood-chip" data-mood="workday" id="mood-workday">💼<span>Workday</span></button>
+            <button class="mood-chip" data-mood="cheat-meal" id="mood-cheat-meal">🍕<span>Cheat Meal</span></button>
+            <button class="mood-chip" data-mood="high-protein" id="mood-high-protein">💪<span>High Protein</span></button>
+          </div>
+
+          <button class="cta-btn" id="btn-mood" disabled aria-disabled="true">
+            🍽️ Find My Meal
+          </button>
+        </div>
+      </section>
+
+      <!-- ── Schedule Panel ─────────────────────────────────────────── -->
+      <section id="tab-schedule" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-schedule">
+        <div class="panel-card">
+          <h2>Plan My Week 📅</h2>
+          <p class="panel-subtitle">Set it once — eat well on autopilot</p>
+
+          <!-- Time -->
+          <div class="form-group">
+            <label for="schedule-time">Meal time</label>
+            <input type="time" id="schedule-time" value="13:00" class="time-input" aria-label="Meal time" />
+          </div>
+
+          <!-- Days -->
+          <div class="form-group">
+            <label>Days of the week</label>
+            <div class="days-grid" role="group" aria-label="Days of the week">
+              <label class="day-chip"><input type="checkbox" value="Mon" checked aria-label="Monday" /><span>Mon</span></label>
+              <label class="day-chip"><input type="checkbox" value="Tue" checked aria-label="Tuesday" /><span>Tue</span></label>
+              <label class="day-chip"><input type="checkbox" value="Wed" checked aria-label="Wednesday" /><span>Wed</span></label>
+              <label class="day-chip"><input type="checkbox" value="Thu" checked aria-label="Thursday" /><span>Thu</span></label>
+              <label class="day-chip"><input type="checkbox" value="Fri" checked aria-label="Friday" /><span>Fri</span></label>
+              <label class="day-chip"><input type="checkbox" value="Sat" aria-label="Saturday" /><span>Sat</span></label>
+              <label class="day-chip"><input type="checkbox" value="Sun" aria-label="Sunday" /><span>Sun</span></label>
+            </div>
+          </div>
+
+          <!-- Budget per meal -->
+          <div class="form-group">
+            <label for="sched-budget">
+              Budget per meal
+              <span class="value-badge" id="sched-budget-display">₹300</span>
+            </label>
+            <input type="range" id="sched-budget" min="100" max="600" step="50" value="300" aria-label="Schedule budget slider" />
+            <div class="range-labels"><span>₹100</span><span>₹600</span></div>
+          </div>
+
+          <!-- Veg toggle -->
+          <div class="form-group">
+            <label>Dietary preference</label>
+            <div class="toggle-group" role="group" aria-label="Schedule dietary preference">
+              <button class="toggle-btn active sched-veg" aria-pressed="true">🌿 Veg Only</button>
+              <button class="toggle-btn sched-nonveg" aria-pressed="false">🍗 Non-Veg</button>
+            </div>
+          </div>
+
+          <button class="cta-btn" id="btn-schedule">
+            📅 Plan My Week
+          </button>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Results Section -->
+    <section id="results" class="results-section" style="display: none;" aria-live="polite">
+      <div id="results-content"></div>
     </section>
 
-    <section id="output">
-      <h2>Response</h2>
-      <pre id="response-box">Select a mode to begin.</pre>
-    </section>
-  </main>
+  </div>
 
   <script src="/app.js"></script>
 </body>
-</html> 
+</html>

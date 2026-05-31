@@ -3,8 +3,8 @@
 > Master reference for the Moon Bites project. Updated after every phase.
 > Any human or ML model reading this file + PHASE_LOG.md should fully understand the project.
 
-**Current Phase:** Phase 0 – Architecture & Planning  
-**Last Updated:** Phase 0
+**Current Phase:** Phase 2 – Decision Engine with Mocked Data ✅  
+**Last Updated:** Phase 2
 
 ---
 

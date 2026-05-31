@@ -1,78 +1,38 @@
+/**
+ * routes/mood.ts  (Phase 2)
+ * Thin route wrapper: validates mood input → calls moodEngine → responds.
+ */
+
 import express from "express";
-import { MOCK_RESTAURANTS } from "../data/mockRestaurants";
+import { runMood, MOOD_MAP } from "../engine/moodEngine";
 
 const router = express.Router();
 
 type MoodRequestBody = {
-  mood: string; // e.g. "comfort", "healthy", "celebration"
-};
-
-const MOOD_TO_TAGS: Record<string, string[]> = {
-  comfort: ["comfort", "curry", "biryani"],
-  healthy: ["healthy", "light", "salad"],
-  celebration: ["party", "celebration", "pizza"],
-  workday: ["weekday-lunch", "office"],
+  mood: string;
 };
 
 router.post("/", (req, res) => {
   const { mood } = req.body as MoodRequestBody;
-
   console.log("[Mood] request body:", req.body);
 
-  const normalizedMood = (mood || "").toLowerCase();
-  const moodTags = MOOD_TO_TAGS[normalizedMood] || [];
+  const normalizedMood = (mood || "").toLowerCase().trim();
 
-  if (moodTags.length === 0) {
+  if (!MOOD_MAP[normalizedMood]) {
     return res.json({
-      message: "Mood not recognized yet.",
-      choice: null,
-      reason: `No tag mapping found for mood "${normalizedMood}".`,
-      debug: {
-        mood: normalizedMood,
-        moodTags,
-      },
+      message: `Mood "${normalizedMood}" is not recognized.`,
+      mood: normalizedMood,
+      results: [],
+      availableMoods: Object.keys(MOOD_MAP),
     });
   }
 
-  // Filter restaurants whose tags overlap with moodTags
-  const candidates = MOCK_RESTAURANTS.filter((r) =>
-    r.tags.some((tag) => moodTags.includes(tag))
-  );
-
-  if (candidates.length === 0) {
-    return res.json({
-      message: "No restaurants match this mood yet.",
-      choice: null,
-      reason: "Mood tags did not match any restaurant tags.",
-      debug: {
-        mood: normalizedMood,
-        moodTags,
-        candidatesCount: candidates.length,
-      },
-    });
-  }
-
-  // Sort by rating (highest) then distance (nearest)
-  const sorted = [...candidates].sort((a, b) => {
-    if (b.rating !== a.rating) {
-      return b.rating - a.rating;
-    }
-    return a.distanceKm - b.distanceKm;
-  });
-
-  const choice = sorted[0];
+  const results = runMood({ mood: normalizedMood });
 
   return res.json({
-    message: "Mood-based recommendation",
-    choice,
-    reason: `Mapped mood "${normalizedMood}" to tags ${moodTags.join(
-      ", "
-    )} and picked the highest-rated nearby option.`,
-    debug: {
-      mood: normalizedMood,
-      moodTags,
-      candidatesCount: candidates.length,
-    },
+    message: "Mood-based recommendations",
+    mood: normalizedMood,
+    results,
   });
 });
 
