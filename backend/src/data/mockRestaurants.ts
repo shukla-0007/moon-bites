@@ -7,9 +7,33 @@
  * SpiceLevel: 1 = mild, 2 = medium, 3 = spicy
  */
 
-import { Restaurant } from "../engine/types";
+export type SpiceLevel = 1 | 2 | 3;
 
-export const MOCK_RESTAURANTS: Restaurant[] = [
+export interface McpDish {
+  id: string;
+  name: string;
+  price: number;
+  isVeg: boolean;
+  spiceLevel: SpiceLevel;
+  tags: string[];
+}
+
+export interface McpRestaurant {
+  id: string;
+  name: string;
+  cuisine: string;
+  avgPriceForTwo: number;
+  vegOnly: boolean;
+  tags: string[];
+  rating: number;
+  distanceKm: number;
+}
+
+export interface MockRestaurant extends McpRestaurant {
+  dishes: McpDish[];
+}
+
+export const MOCK_RESTAURANTS: MockRestaurant[] = [
   {
     id: "r1",
     name: "Comfort Curry House",

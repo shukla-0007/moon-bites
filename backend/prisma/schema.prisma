@@ -1,7 +1,6 @@
-// Moon Bites – Prisma Schema v1
-// Stores users, preferences, and order history.
-// Phase 2: OrderHistory populated on every /api/surprise call.
-// Phase 6: userId FK will be wired once auth is added.
+// Moon Bites – Prisma Schema v2 (Phase 3)
+// Added: Schedule (persistent meal plans), Feedback (post-meal ratings)
+// OrderHistory now links to Feedback.
 
 generator client {
   provider = "prisma-client-js"
@@ -11,6 +10,8 @@ datasource db {
   provider = "sqlite"
 }
 
+// ── Users ────────────────────────────────────────────────────────────────────
+
 model User {
   id           String        @id @default(cuid())
   name         String
@@ -18,6 +19,7 @@ model User {
   createdAt    DateTime      @default(now())
   preferences  Preferences?
   orderHistory OrderHistory[]
+  schedules    Schedule[]
 }
 
 model Preferences {
@@ -30,16 +32,50 @@ model Preferences {
   blacklistedTags String  @default("")  // comma-separated tag strings
 }
 
+// ── Schedules (Phase 3) ───────────────────────────────────────────────────────
+// Each row is one saved autonomous meal schedule.
+// days stored as comma-separated string: "Mon,Tue,Wed"
+
+model Schedule {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  label     String   @default("My Meal Plan")
+  time      String   // "HH:MM"  e.g. "13:00"
+  days      String   // "Mon,Tue,Wed"
+  budget    Int
+  veg       Boolean  @default(false)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+// ── Order History ─────────────────────────────────────────────────────────────
+
 model OrderHistory {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   userId         String?
-  user           User?    @relation(fields: [userId], references: [id])
-  flow           String   // "surprise" | "mood" | "schedule"
+  user           User?     @relation(fields: [userId], references: [id])
+  flow           String    // "surprise" | "mood" | "schedule" | "cron"
   restaurantId   String
   restaurantName String
   dishName       String
   dishPrice      Int
-  mood           String?  // populated for mood flow only
-  constraints    String   // JSON-stringified UserConstraints
-  placedAt       DateTime @default(now())
+  mood           String?   // populated for mood flow only
+  constraints    String    // JSON-stringified constraints used
+  placedAt       DateTime  @default(now())
+  feedback       Feedback?
+}
+
+// ── Feedback (Phase 3) ────────────────────────────────────────────────────────
+// One feedback entry per order. rating: "liked" | "disliked"
+// tags: comma-separated flags e.g. "too_spicy,too_oily"
+
+model Feedback {
+  id             String       @id @default(cuid())
+  orderHistoryId String       @unique
+  orderHistory   OrderHistory @relation(fields: [orderHistoryId], references: [id])
+  rating         String       // "liked" | "disliked"
+  tags           String       @default("")
+  note           String?
+  createdAt      DateTime     @default(now())
 }

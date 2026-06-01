@@ -3,8 +3,8 @@
 > Master reference for the Moon Bites project. Updated after every phase.
 > Any human or ML model reading this file + PHASE_LOG.md should fully understand the project.
 
-**Current Phase:** Phase 2 – Decision Engine with Mocked Data ✅  
-**Last Updated:** Phase 2
+**Current Phase:** Phase 4 – MCP Integration Design (Interfaces Only) ✅  
+**Last Updated:** Phase 4
 
 ---
 
@@ -124,12 +124,12 @@ Moon Bites is an AI-powered Swiggy ordering assistant that decides what you shou
 
 | Phase | Name | Status |
 |---|---|---|
-| Phase 0 | Architecture & Planning | In Progress |
-| Phase 1 | Skeleton Web App + Backend | Not Started |
-| Phase 2 | Decision Engine with Mocked Data | Not Started |
-| Phase 3 | Scheduling and Autonomous Flows (Mocked) | Not Started |
-| Phase 4 | MCP Integration Design (Interfaces Only) | Not Started |
-| Phase 5 | Demo-Ready Prototype and Docs | Not Started |
+| Phase 0 | Architecture & Planning | ✅ Complete |
+| Phase 1 | Skeleton Web App + Backend | ✅ Complete |
+| Phase 2 | Decision Engine with Mocked Data | ✅ Complete |
+| Phase 3 | Scheduling and Autonomous Flows (Mocked) | ✅ Complete |
+| Phase 4 | MCP Integration Design (Interfaces Only) | ✅ Complete |
+| Phase 5 | Demo-Ready Prototype and Docs | In Progress |
 | Phase 6 | Real MCP Wiring (Post-Approval) | Not Started |
 
 ---

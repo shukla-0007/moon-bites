@@ -91,7 +91,7 @@
 
 ## Phase 3 – Scheduling and Autonomous Flows (Mocked)
 
-**Status:** Not Started
+**Status:** ✅ Complete
 
 **Planned Scope:**
 - Add schedule storage to Prisma schema (days, time slots, rules per user).
@@ -103,7 +103,7 @@
 
 ## Phase 4 – MCP Integration Design (Interfaces Only)
 
-**Status:** Not Started
+**Status:** ✅ Complete
 
 **Planned Scope:**
 - Define the exact TypeScript interfaces for each Swiggy MCP tool (discovery, menu, cart, order, history).
@@ -179,3 +179,53 @@
 - `/api/mood` with mood=comfort → 5 ranked dishes from 3+ restaurants
 - `/api/schedule` with Mon/Tue/Wed → 3-day plan with variety (different dish each day)
 - Frontend: tab switching, cards render, reshuffle works
+
+---
+
+## Phase 3 Execution Log
+
+### Database Schema Additions
+- Updated [schema.prisma](file:///Users/sigma-7/Documents/VS-Code/MoodBites-Swiggy%20Builder/VSCode_MoodBites-Swiggy%20Builder/moon-bites/backend/prisma/schema.prisma) to add `Schedule` and `Feedback` models, linking `Feedback` 1:1 with `OrderHistory`.
+- Ran database migrations (`phase3`) and generated Prisma Client.
+
+### Background Worker & Cron Jobs
+- Implemented [cronWorker.ts](file:///Users/sigma-7/Documents/VS-Code/MoodBites-Swiggy%20Builder/VSCode_MoodBites-Swiggy%20Builder/moon-bites/backend/src/worker/cronWorker.ts) leveraging `node-cron` to execute automated food ordering for saved user schedules.
+- Dynamically schedules, registers, and cancels background tasks in response to user updates at runtime.
+- Automatically stores simulated chronologically placed orders into the `OrderHistory` table.
+
+### Backend Endpoints
+- Added schedules CRUD endpoints (`/api/schedules`).
+- Added order rating/feedback submission endpoint (`/api/feedback`).
+- Added history query endpoint (`/api/history`).
+
+### Frontend Dashboards
+- Upgraded the UI with a new **History** tab displaying past orders and allowing inline feedback (positive/negative ratings, tag selection).
+- Implemented visual listings for saved recurring meal schedules (label, days, budget, veg status) with inline toggle options to pause or delete.
+
+### Verified
+- Tested schedule persistence, cron triggers, order listing retrieval, and feedback submission, confirming they all function properly and sync with the database.
+
+---
+
+## Phase 4 Execution Log
+
+### Integration Layer
+- Created [swiggyMcp.ts](file:///Users/sigma-7/Documents/VS-Code/MoodBites-Swiggy%20Builder/VSCode_MoodBites-Swiggy%20Builder/moon-bites/backend/src/integration/swiggyMcp.ts) defining standard Swiggy Food MCP tool interfaces (`McpRestaurant`, `McpDish`, `McpCart`, `McpOrderResult`).
+- Implemented `SwiggyMcpClient` providing an async mock wrapper client around our catalog.
+- Added robust error handling mock simulation (e.g. 5% random failure rate throwing timeouts/rate-limit exceptions) to verify application resilience.
+
+### Decoupling & Refactoring
+- Updated types in [types.ts](file:///Users/sigma-7/Documents/VS-Code/MoodBites-Swiggy%20Builder/VSCode_MoodBites-Swiggy%20Builder/moon-bites/backend/src/engine/types.ts) and the scoring algorithm [scorer.ts](file:///Users/sigma-7/Documents/VS-Code/MoodBites-Swiggy%20Builder/VSCode_MoodBites-Swiggy%20Builder/moon-bites/backend/src/engine/scorer.ts) to accept MCP data types.
+- Refactored all decision logic modules [surpriseEngine.ts](file:///Users/sigma-7/Documents/VS-Code/MoodBites-Swiggy%20Builder/VSCode_MoodBites-Swiggy%20Builder/moon-bites/backend/src/engine/surpriseEngine.ts), [moodEngine.ts](file:///Users/sigma-7/Documents/VS-Code/MoodBites-Swiggy%20Builder/VSCode_MoodBites-Swiggy%20Builder/moon-bites/backend/src/engine/moodEngine.ts), and [scheduleEngine.ts](file:///Users/sigma-7/Documents/VS-Code/MoodBites-Swiggy%20Builder/VSCode_MoodBites-Swiggy%20Builder/moon-bites/backend/src/engine/scheduleEngine.ts) to be `async` and query Swiggy data via `SwiggyMcpClient` rather than direct file imports.
+- Updated all router handlers ([surprise.ts](file:///Users/sigma-7/Documents/VS-Code/MoodBites-Swiggy%20Builder/VSCode_MoodBites-Swiggy%20Builder/moon-bites/backend/src/routes/surprise.ts), [mood.ts](file:///Users/sigma-7/Documents/VS-Code/MoodBites-Swiggy%20Builder/VSCode_MoodBites-Swiggy%20Builder/moon-bites/backend/src/routes/mood.ts), [schedule.ts](file:///Users/sigma-7/Documents/VS-Code/MoodBites-Swiggy%20Builder/VSCode_MoodBites-Swiggy%20Builder/moon-bites/backend/src/routes/schedule.ts)) and the daemon worker [cronWorker.ts](file:///Users/sigma-7/Documents/VS-Code/MoodBites-Swiggy%20Builder/VSCode_MoodBites-Swiggy%20Builder/moon-bites/backend/src/worker/cronWorker.ts) to support the async flow and gracefully catch checkout failures.
+
+### Frontend Robustness
+- Updated [app.js](file:///Users/sigma-7/Documents/VS-Code/MoodBites-Swiggy%20Builder/VSCode_MoodBites-Swiggy%20Builder/moon-bites/frontend/app.js) to display specific server errors (e.g. Swiggy API timeout) in the UI.
+- Upgraded the UI results section to render a dedicated, card-based order summary receipt when a Swiggy order goes through successfully.
+
+### Documented MCP tool chains
+- Documented all three agent interaction sequences in [MCP_TOOL_CHAINS.md](file:///Users/sigma-7/Documents/VS-Code/MoodBites-Swiggy%20Builder/VSCode_MoodBites-Swiggy%20Builder/moon-bites/docs/MCP_TOOL_CHAINS.md).
+
+### Verified
+- Build compiles cleanly without errors.
+- Verified healthy API endpoints and proper execution of async cart creation and checkout workflows.

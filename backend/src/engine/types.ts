@@ -4,30 +4,11 @@
  * These mirror the shape of real Swiggy MCP tool responses (Phase 4+).
  */
 
-// ── Data Model ────────────────────────────────────────────────────────────────
+import { McpDish, McpRestaurant, SpiceLevel } from "../integration/swiggyMcp";
 
-export type SpiceLevel = 1 | 2 | 3; // 1 = mild, 2 = medium, 3 = spicy
-
-export type Dish = {
-  id: string;
-  name: string;
-  price: number; // in ₹
-  isVeg: boolean;
-  spiceLevel: SpiceLevel;
-  tags: string[];
-};
-
-export type Restaurant = {
-  id: string;
-  name: string;
-  cuisine: string;
-  avgPriceForTwo: number;
-  vegOnly: boolean;
-  tags: string[];
-  rating: number; // 1–5
-  distanceKm: number;
-  dishes: Dish[];
-};
+export { SpiceLevel };
+export type Dish = McpDish;
+export type Restaurant = McpRestaurant;
 
 // ── Engine Input Types ─────────────────────────────────────────────────────────
 

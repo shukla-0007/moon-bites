@@ -10,7 +10,7 @@
  * Returns top 5 matches sorted by score (highest first).
  */
 
-import { MOCK_RESTAURANTS } from "../data/mockRestaurants";
+import { swiggyMcpClient } from "../integration/swiggyMcp";
 import { MoodInput, DishRecommendation, SpiceLevel } from "./types";
 import { scoreDish } from "./scorer";
 
@@ -62,20 +62,36 @@ export const MOOD_MAP: Record<string, MoodConfig> = {
 
 const BASE_BUDGET = 500;
 
-export function runMood(input: MoodInput): DishRecommendation[] {
+export async function runMood(input: MoodInput): Promise<DishRecommendation[]> {
   const config = MOOD_MAP[input.mood.toLowerCase()];
   if (!config) return [];
 
   const effectiveBudget = BASE_BUDGET * config.budgetMultiplier;
   const candidates: DishRecommendation[] = [];
 
-  for (const restaurant of MOCK_RESTAURANTS) {
+  let restaurants;
+  try {
+    restaurants = await swiggyMcpClient.discoverRestaurants(12.9716, 77.5946);
+  } catch (err) {
+    console.error("[moodEngine] discoverRestaurants failed:", err);
+    throw err;
+  }
+
+  for (const restaurant of restaurants) {
     // Restaurant must have at least one matching mood tag
     const restaurantTagMatch = restaurant.tags.some((t) =>
       config.tags.includes(t)
     );
 
-    for (const dish of restaurant.dishes) {
+    let dishes;
+    try {
+      dishes = await swiggyMcpClient.getRestaurantMenu(restaurant.id);
+    } catch (err) {
+      console.warn(`[moodEngine] Failed to get menu for ${restaurant.name} (${restaurant.id}):`, err);
+      continue;
+    }
+
+    for (const dish of dishes) {
       // Dish must have at least one matching mood tag OR restaurant has a match
       const dishTagMatch = dish.tags.some((t) => config.tags.includes(t));
       if (!restaurantTagMatch && !dishTagMatch) continue;
@@ -85,7 +101,7 @@ export function runMood(input: MoodInput): DishRecommendation[] {
 
       const { score, reason } = scoreDish(dish, restaurant, {
         budget: effectiveBudget,
-        veg: false, // mood flow is veg-agnostic; filter can be added later
+        veg: false, // mood flow is veg-agnostic
         spiceLevel: config.spicePreference,
       });
 

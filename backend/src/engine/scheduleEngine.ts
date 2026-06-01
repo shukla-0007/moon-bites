@@ -4,7 +4,7 @@
  *
  * Algorithm:
  *  1. Parse time → lunch / dinner / other
- *  2. Per day: run the surprise engine with time-adjusted constraints
+ *  2. Per day: run the surprise engine with time-adjusted constraints (async)
  *  3. Enforce variety: if a dish was already picked for a previous day,
  *     retry up to 5 times to get a different one
  *  4. Build and return the full week plan
@@ -20,7 +20,7 @@ function getTimeOfDay(time: string): "lunch" | "dinner" | "other" {
   return "other";
 }
 
-export function runSchedule(input: ScheduleInput): ScheduledMeal[] {
+export async function runSchedule(input: ScheduleInput): Promise<ScheduledMeal[]> {
   const { time, days, budget, veg } = input;
   const timeOfDay = getTimeOfDay(time);
 
@@ -37,7 +37,7 @@ export function runSchedule(input: ScheduleInput): ScheduledMeal[] {
 
     // Try up to 5 times to get a dish not already in the week plan
     for (let attempt = 0; attempt < 5; attempt++) {
-      const result = runSurprise(baseConstraints);
+      const result = await runSurprise(baseConstraints);
       if (!result) break;
 
       if (!usedDishIds.has(result.pick.dish.id)) {
