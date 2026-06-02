@@ -15,29 +15,73 @@
 
     <!-- Header -->
     <header class="app-header">
-      <div class="logo">
-        <span class="logo-icon">🌙</span>
-        <span class="logo-text">Moon Bites</span>
+      <div class="header-left">
+        <div class="header-logo">
+          <!-- A premium orange crescent moon merging with the Swiggy ribbon shape -->
+          <svg class="sw-logo" viewBox="0 0 100 100" width="30" height="30" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="swiggyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#fc8019" />
+                <stop offset="100%" stop-color="#ff9838" />
+              </linearGradient>
+            </defs>
+            <path d="M 50,5 C 68,5 82,14 88,27 C 82,23 72,21 62,23 C 38,28 22,48 24,72 C 26,94 48,110 70,108 C 82,107 92,100 98,90 C 89,98 76,102 63,100 C 40,96 26,74 31,52 C 34,34 46,20 62,15 C 58,12 54,8 50,5 Z" fill="url(#swiggyGrad)"/>
+            <circle cx="76" cy="46" r="10" fill="#fc8019"/>
+          </svg>
+          <span class="logo-text">Moon Bites</span>
+        </div>
+        <div class="location-widget" id="location-select">
+          <span class="loc-tag">Office</span>
+          <span class="loc-name">Indiranagar, Bangalore</span>
+          <span class="loc-arrow">▾</span>
+        </div>
       </div>
-      <p class="tagline">Your AI-powered food decision engine</p>
+      <div class="header-right">
+        <!-- User avatar icon representing logged-in state -->
+        <svg class="header-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+          <circle cx="12" cy="7" r="4" />
+        </svg>
+      </div>
     </header>
 
     <!-- Tab Navigation -->
     <nav class="tab-bar" role="tablist">
       <button class="tab-btn active" data-tab="surprise" role="tab" aria-selected="true" id="tab-btn-surprise">
-        <span class="tab-icon">🎲</span>
+        <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+          <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/>
+          <circle cx="15.5" cy="15.5" r="1.5" fill="currentColor"/>
+          <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+          <circle cx="8.5" cy="15.5" r="1.5" fill="currentColor"/>
+          <circle cx="15.5" cy="15.5" r="1.5" fill="currentColor"/>
+        </svg>
         <span class="tab-label">Surprise Me</span>
       </button>
       <button class="tab-btn" data-tab="mood" role="tab" aria-selected="false" id="tab-btn-mood">
-        <span class="tab-icon">😊</span>
-        <span class="tab-label">Mood</span>
+        <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+          <line x1="9" y1="9" x2="9.01" y2="9"/>
+          <line x1="15" y1="9" x2="15.01" y2="9"/>
+        </svg>
+        <span class="tab-label">Moods</span>
       </button>
       <button class="tab-btn" data-tab="schedule" role="tab" aria-selected="false" id="tab-btn-schedule">
-        <span class="tab-icon">📅</span>
+        <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
         <span class="tab-label">Schedule</span>
       </button>
       <button class="tab-btn" data-tab="history" role="tab" aria-selected="false" id="tab-btn-history">
-        <span class="tab-icon">🕐</span>
+        <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+          <path d="M3.05 11a9 9 0 1 1 .5 4m-.5 5v-5h5"/>
+        </svg>
         <span class="tab-label">History</span>
       </button>
     </nav>

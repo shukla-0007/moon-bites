@@ -114,7 +114,7 @@
 
 ## Phase 5 – Demo-Ready Prototype and Docs
 
-**Status:** Not Started
+**Status:** ✅ Complete
 
 **Planned Scope:**
 - Polish the UI for all 3 flows so it is presentable to Swiggy.
@@ -228,4 +228,29 @@
 
 ### Verified
 - Build compiles cleanly without errors.
-- Verified healthy API endpoints and proper execution of async cart creation and checkout workflows.
+- Verified healthy API endpoints an## Phase 5 Execution Log
+
+### Frontend & Swiggy Branding Polish
+- Redesigned the visual theme of the web app in [style.css](file:///Users/sigma-7/Documents/VS-Code/MoodBites-Swiggy%20Builder/VSCode_MoodBites-Swiggy%20Builder/moon-bites/frontend/style.css) using a clean, light-colored Swiggy theme (Swiggy Orange, dark charcoal body headings `#282c3f`, soft description grays `#686b78`, and green rating labels `#48c47d`) to make the UI look exactly like a native part of the real Swiggy website.
+- Formatted the `.app-shell` as a centered viewport mockup frame on desktop screens, scaling fluidly on mobile viewports.
+- Integrated a Swiggy-native header layout containing an custom vector SVG logo (orange crescent moon merging with the Swiggy ribbon) and a location selection widget (`Office • Indiranagar, Bangalore ▾`).
+- Swapped tab emojis (🎲, 😊, 📅, 🕐) in [index.html](file:///Users/sigma-7/Documents/VS-Code/MoodBites-Swiggy%20Builder/VSCode_MoodBites-Swiggy%20Builder/moon-bites/frontend/index.html) for crisp inline SVGs, styled with smooth orange underline indicator line animations (`.tab-btn::after`).
+- Styled recommended dish cards into Swiggy's signature split menu-item grid:
+  - **Left column**: Veg/Non-veg custom indicator box, bestseller/top pick label, dish name, price, green star rating badge, distance/ETA pills, and AI recommendation rationale.
+  - **Right column**: An image container with a dynamic background gradient + food emoji (e.g. 🍔, 🍕, 🍛, 🍲, 🥗 based on tags) and an absolute-positioned white "ORDER NOW" button overlapping the bottom.
+- Enhanced the success screen to render a live delivery tracking progress bar (`[Ordered] ➔ [Preparing] ➔ [Arriving]`) alongside a detailed Swiggy bill breakdown (Subtotal, Delivery Fee, Packaging Charge, GST & Taxes, and total bill).
+
+### Interactive Specific Dish Checkout
+- Bound the "ORDER NOW" button on all recommendation cards to trigger a direct order checkout using `/api/surprise` with the `retryDishId` request param. This makes recommendations in the Mood, Alternatives, and History tabs instantly actionable.
+
+### Robust Checkout Retry Mechanism
+- Refactored the `/api/surprise` router in [surprise.ts](file:///Users/sigma-7/Documents/VS-Code/MoodBites-Swiggy%20Builder/VSCode_MoodBites-Swiggy%20Builder/moon-bites/backend/src/routes/surprise.ts) to return partial results (recommendation cards) and mock exception messages inside a 200 payload if the Swiggy checkout simulation encounters errors.
+- Added a custom `retryDishId` request parameter to bypass decision selection and directly retry checkout on the same dish.
+- Implemented a custom **"Checkout Failed"** alert card on the UI displaying the specific error message and offering a **"🔄 Retry Checkout"** button to allow users to retry ordering immediately without reshuffling.
+
+### Backend Error Boundaries
+- Integrated a global Express unhandled exception boundary middleware in [index.ts](file:///Users/sigma-7/Documents/VS-Code/MoodBites-Swiggy%20Builder/VSCode_MoodBites-Swiggy%20Builder/moon-bites/backend/src/index.ts) to log and respond gracefully to unexpected exceptions.
+
+### Verified
+- Built clean TypeScript outputs (`npm run build`).
+- Verified happy-path checkout progress receipts, direct one-click orders, and simulated checkout error tracking retry flows via curl API tests and browser validation.

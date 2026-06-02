@@ -1,14 +1,16 @@
 /**
- * routes/surprise.ts  (Phase 4)
+ * routes/surprise.ts  (Phase 5)
  * Thin route wrapper: validates input → calls surpriseEngine (async) → 
  * executes Swiggy MCP Cart/Checkout sequence → saves to DB → responds.
+ * Supports retrying checkout for a specific dish when failures strike.
  */
 
 import express from "express";
 import { runSurprise } from "../engine/surpriseEngine";
-import { UserConstraints, SpiceLevel } from "../engine/types";
+import { UserConstraints, SpiceLevel, DishRecommendation } from "../engine/types";
 import prisma from "../lib/prisma";
 import { swiggyMcpClient, SwiggyMcpError } from "../integration/swiggyMcp";
+import { MOCK_RESTAURANTS } from "../data/mockRestaurants";
 
 const router = express.Router();
 
@@ -16,17 +18,47 @@ type SurpriseRequestBody = {
   budget: number;
   veg: boolean;
   spiceLevel?: SpiceLevel;
+  retryDishId?: string;
 };
 
 router.post("/", async (req, res, next) => {
   try {
-    const { budget, veg, spiceLevel } = req.body as SurpriseRequestBody;
+    const { budget, veg, spiceLevel, retryDishId } = req.body as SurpriseRequestBody;
     console.log("[Surprise] request body:", req.body);
 
-    const constraints: UserConstraints = { budget, veg, spiceLevel };
-    const result = await runSurprise(constraints);
+    let pick: DishRecommendation | null = null;
+    let alternatives: DishRecommendation[] = [];
 
-    if (!result) {
+    if (retryDishId) {
+      // Find the dish in the mock data
+      const restaurant = MOCK_RESTAURANTS.find(r => r.dishes.some(d => d.id === retryDishId));
+      const dish = restaurant?.dishes.find(d => d.id === retryDishId);
+      
+      if (restaurant && dish) {
+        pick = {
+          restaurant: {
+            id: restaurant.id,
+            name: restaurant.name,
+            cuisine: restaurant.cuisine,
+            rating: restaurant.rating,
+            distanceKm: restaurant.distanceKm,
+            vegOnly: restaurant.vegOnly,
+          },
+          dish,
+          score: 100,
+          reason: "Retrying previous order selection",
+        };
+      }
+    } else {
+      const constraints: UserConstraints = { budget, veg, spiceLevel };
+      const result = await runSurprise(constraints);
+      if (result) {
+        pick = result.pick;
+        alternatives = result.alternatives;
+      }
+    }
+
+    if (!pick) {
       return res.json({
         message: "No restaurants match your criteria. Try loosening your filters.",
         pick: null,
@@ -36,61 +68,74 @@ router.post("/", async (req, res, next) => {
     }
 
     // ── Swiggy MCP Tool Chain Mocking ──────────────────────────────────────────
-    // 1. Create Cart
-    const cart = await swiggyMcpClient.createCart(result.pick.restaurant.id);
-    
-    // 2. Add dish to Cart
-    await swiggyMcpClient.addToCart(cart.cartId, result.pick.dish.id, 1);
-    
-    // 3. Place Order
-    const orderResult = await swiggyMcpClient.placeOrder(cart.cartId, "addr_home_1", "COD");
-
-    // Save to OrderHistory (userId null — auth comes in Phase 6)
-    let saved = false;
     try {
-      await prisma.orderHistory.create({
-        data: {
-          flow: "surprise",
-          restaurantId: result.pick.restaurant.id,
-          restaurantName: result.pick.restaurant.name,
-          dishName: result.pick.dish.name,
-          dishPrice: result.pick.dish.price,
-          constraints: JSON.stringify({
-            ...constraints,
-            orderId: orderResult.orderId,
-            cartId: cart.cartId,
-            billTotal: orderResult.cart.totalBill,
-            etaMinutes: orderResult.etaMinutes,
-          }),
-        },
-      });
-      saved = true;
-    } catch (err) {
-      console.error("[Surprise] DB save failed:", err);
-    }
+      // 1. Create Cart
+      const cart = await swiggyMcpClient.createCart(pick.restaurant.id);
+      
+      // 2. Add dish to Cart
+      await swiggyMcpClient.addToCart(cart.cartId, pick.dish.id, 1);
+      
+      // 3. Place Order
+      const orderResult = await swiggyMcpClient.placeOrder(cart.cartId, "addr_home_1", "COD");
 
-    return res.json({
-      message: "Surprise Me recommendation",
-      pick: result.pick,
-      alternatives: result.alternatives,
-      order: {
-        orderId: orderResult.orderId,
-        status: orderResult.status,
-        etaMinutes: orderResult.etaMinutes,
-        trackUrl: orderResult.trackUrl,
-        billTotal: orderResult.cart.totalBill,
-      },
-      saved,
-    });
-  } catch (err) {
-    if (err instanceof SwiggyMcpError) {
-      console.warn(`[Surprise API] Swiggy MCP error: [${err.code}] ${err.message}`);
-      return res.status(500).json({
-        error: err.message,
-        code: err.code,
-        message: "Swiggy order placement failed. Please try again.",
+      // Save to OrderHistory (userId null — auth comes in Phase 6)
+      let saved = false;
+      try {
+        await prisma.orderHistory.create({
+          data: {
+            flow: "surprise",
+            restaurantId: pick.restaurant.id,
+            restaurantName: pick.restaurant.name,
+            dishName: pick.dish.name,
+            dishPrice: pick.dish.price,
+            constraints: JSON.stringify({
+              budget,
+              veg,
+              spiceLevel,
+              orderId: orderResult.orderId,
+              cartId: cart.cartId,
+              billTotal: orderResult.cart.totalBill,
+              etaMinutes: orderResult.etaMinutes,
+              retryDishId,
+            }),
+          },
+        });
+        saved = true;
+      } catch (err) {
+        console.error("[Surprise] DB save failed:", err);
+      }
+
+      return res.json({
+        message: "Surprise Me recommendation",
+        pick,
+        alternatives,
+        order: {
+          orderId: orderResult.orderId,
+          status: orderResult.status,
+          etaMinutes: orderResult.etaMinutes,
+          trackUrl: orderResult.trackUrl,
+          billTotal: orderResult.cart.totalBill,
+        },
+        saved,
+        error: null,
       });
+    } catch (err) {
+      if (err instanceof SwiggyMcpError) {
+        console.warn(`[Surprise API Checkout] Swiggy MCP error: [${err.code}] ${err.message}`);
+        // Return 200 with error details so UI can render the card and retry button!
+        return res.json({
+          message: "Surprise Me recommendation - checkout failed",
+          pick,
+          alternatives,
+          order: null,
+          error: err.message,
+          errorCode: err.code,
+          saved: false,
+        });
+      }
+      throw err;
     }
+  } catch (err) {
     next(err);
   }
 });

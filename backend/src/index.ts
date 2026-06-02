@@ -36,6 +36,16 @@ app.use("/api/history",   historyRouter);    // order history
 // ── Static Frontend ───────────────────────────────────────────────────────
 app.use(express.static(path.join(__dirname, "..", "..", "frontend")));
 
+// ── Error Boundary ────────────────────────────────────────────────────────
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error("[Unhandled Error]:", err);
+  res.status(500).json({
+    error: err.message || "Internal Server Error",
+    code: "UNHANDLED_ERROR",
+    message: "An unexpected server error occurred.",
+  });
+});
+
 // ── Start ─────────────────────────────────────────────────────────────────
 app.listen(PORT, async () => {
   console.log(`\n🌙 Moon Bites backend running on http://localhost:${PORT}`);
