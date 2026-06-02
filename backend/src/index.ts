@@ -48,6 +48,6 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
 
 // ── Start ─────────────────────────────────────────────────────────────────
 app.listen(PORT, async () => {
-  console.log(`\n🌙 Moon Bites backend running on http://localhost:${PORT}`);
+  console.log(`\n🌙 Mood Bites backend running on http://localhost:${PORT}`);
   await startCronWorker();
 });

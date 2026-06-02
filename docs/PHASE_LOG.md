@@ -1,4 +1,4 @@
-# Moon Bites – Phase Log
+# Mood Bites – Phase Log
 
 > Tracks what was planned, what was executed, and what changed at every phase.
 > Read this alongside PROJECT_CONTEXT.md for the full picture.

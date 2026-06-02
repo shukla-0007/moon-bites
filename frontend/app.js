@@ -1,5 +1,5 @@
 /**
- * Moon Bites – frontend/app.js  (Phase 3)
+ * Mood Bites – frontend/app.js  (Phase 3)
  * Tab navigation, form state, card rendering, API calls.
  * New in Phase 3: save schedules, load saved schedules, history tab, feedback UI.
  */

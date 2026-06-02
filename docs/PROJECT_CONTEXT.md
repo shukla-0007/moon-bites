@@ -1,6 +1,6 @@
-# Moon Bites – Project Context
+# Mood Bites – Project Context
 
-> Master reference for the Moon Bites project. Updated after every phase.
+> Master reference for the Mood Bites project. Updated after every phase.
 > Any human or ML model reading this file + PHASE_LOG.md should fully understand the project.
 
 **Current Phase:** Phase 5 – Demo-Ready Prototype and Docs ✅  
@@ -26,18 +26,18 @@ Many Swiggy users open the app, see hundreds of options, and cannot decide what 
 
 ### 2.1 One-Liner
 
-Moon Bites is an AI-powered Swiggy ordering assistant that decides what you should eat — on demand or on a schedule — so you never have to.
+Mood Bites is an AI-powered Swiggy ordering assistant that decides what you should eat — on demand or on a schedule — so you never have to.
 
 ### 2.2 Core Capabilities
 
 #### Capability 1 – Surprise Me One-Tap Order
 - User sets constraints: budget, veg/non-veg, spice level, delivery time tolerance.
-- Moon Bites picks a restaurant and dishes from Swiggy and prepares an order.
+- Mood Bites picks a restaurant and dishes from Swiggy and prepares an order.
 - User reviews the pick and confirms or reshuffles.
 
 #### Capability 2 – Mood-Based Recommendations
 - User selects a mood or goal: comfort food, healthy, high-protein, light lunch, cheat meal, etc.
-- Moon Bites maps this to cuisine types, dish types, and price ranges.
+- Mood Bites maps this to cuisine types, dish types, and price ranges.
 - Returns 3 to 5 concrete suggestions from Swiggy with a single Order this action.
 
 #### Capability 3 – Autonomous Daily Meal Scheduling

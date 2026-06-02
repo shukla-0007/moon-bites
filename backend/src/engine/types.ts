@@ -1,6 +1,6 @@
 /**
  * engine/types.ts
- * Shared TypeScript types for the Moon Bites decision engine.
+ * Shared TypeScript types for the Mood Bites decision engine.
  * These mirror the shape of real Swiggy MCP tool responses (Phase 4+).
  */
 

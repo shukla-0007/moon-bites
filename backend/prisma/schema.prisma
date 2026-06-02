@@ -1,4 +1,4 @@
-// Moon Bites – Prisma Schema v2 (Phase 3)
+// Mood Bites – Prisma Schema v2 (Phase 3)
 // Added: Schedule (persistent meal plans), Feedback (post-meal ratings)
 // OrderHistory now links to Feedback.
 

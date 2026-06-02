@@ -1,6 +1,6 @@
-# Moon Bites – Swiggy MCP Tool Chains
+# Mood Bites – Swiggy MCP Tool Chains
 
-This document details the exact sequence of Swiggy Food MCP server tool calls executed by the Moon Bites backend to satisfy each user flow. 
+This document details the exact sequence of Swiggy Food MCP server tool calls executed by the Mood Bites backend to satisfy each user flow. 
 
 ---
 
@@ -11,8 +11,8 @@ The Surprise Me flow selects a single, highly-rated dish from a nearby restauran
 ### Sequence Diagram
 ```mermaid
 sequenceDiagram
-    participant User as Moon Bites UI
-    participant Server as Moon Bites Backend
+    participant User as Mood Bites UI
+    participant Server as Mood Bites Backend
     participant DB as SQLite DB
     participant MCP as Swiggy Food MCP Server
 
@@ -80,8 +80,8 @@ The Mood flow retrieves a ranked list of 5 suggestions matching the requested mo
 ### Sequence Diagram
 ```mermaid
 sequenceDiagram
-    participant User as Moon Bites UI
-    participant Server as Moon Bites Backend
+    participant User as Mood Bites UI
+    participant Server as Mood Bites Backend
     participant MCP as Swiggy Food MCP Server
 
     User->>Server: POST /api/mood { mood }
