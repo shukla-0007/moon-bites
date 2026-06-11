@@ -1,33 +1,26 @@
 /**
- * Mood Bites – frontend/app.js  (Phase 3)
- * Tab navigation, form state, card rendering, API calls.
- * New in Phase 3: save schedules, load saved schedules, history tab, feedback UI.
+ * Mood Bites – frontend/app.js  (Phase 5.5)
+ * Swiggy-grade UI: toast notifications, skeleton loaders, CTA loading states,
+ * quick filter wiring, stagger card animations, bottom nav tab switching.
  */
 
-// ── State ─────────────────────────────────────────────────────────────────
-let surpriseVeg  = true;
+// ── App State ──────────────────────────────────────────────────────────────
+let surpriseVeg   = true;
 let surpriseSpice = 1;
-let selectedMood = null;
-let schedVeg     = true;
+let selectedMood  = null;
+let schedVeg      = true;
 
-// ── Helpers ───────────────────────────────────────────────────────────────
+// ── HTTP Helpers ───────────────────────────────────────────────────────────
 async function postJSON(path, body) {
   const res = await fetch(path, {
-    method: "POST",
+    method:  "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+    body:    JSON.stringify(body),
   });
   if (!res.ok) {
-    let errMsg = `HTTP ${res.status}`;
-    try {
-      const errData = await res.json();
-      if (errData && errData.error) {
-        errMsg = errData.error;
-      } else if (errData && errData.message) {
-        errMsg = errData.message;
-      }
-    } catch (_) {}
-    throw new Error(errMsg);
+    let msg = `HTTP ${res.status}`;
+    try { const d = await res.json(); msg = d.error || d.message || msg; } catch (_) {}
+    throw new Error(msg);
   }
   return res.json();
 }
@@ -35,12 +28,9 @@ async function postJSON(path, body) {
 async function getJSON(path) {
   const res = await fetch(path);
   if (!res.ok) {
-    let errMsg = `HTTP ${res.status}`;
-    try {
-      const errData = await res.json();
-      if (errData && errData.message) errMsg = errData.message;
-    } catch (_) {}
-    throw new Error(errMsg);
+    let msg = `HTTP ${res.status}`;
+    try { const d = await res.json(); msg = d.message || msg; } catch (_) {}
+    throw new Error(msg);
   }
   return res.json();
 }
@@ -48,33 +38,91 @@ async function getJSON(path) {
 async function deleteJSON(path) {
   const res = await fetch(path, { method: "DELETE" });
   if (!res.ok) {
-    let errMsg = `HTTP ${res.status}`;
-    try {
-      const errData = await res.json();
-      if (errData && errData.message) errMsg = errData.message;
-    } catch (_) {}
-    throw new Error(errMsg);
+    let msg = `HTTP ${res.status}`;
+    try { const d = await res.json(); msg = d.message || msg; } catch (_) {}
+    throw new Error(msg);
   }
   return res.json();
 }
 
 async function patchJSON(path, body) {
   const res = await fetch(path, {
-    method: "PATCH",
+    method:  "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+    body:    JSON.stringify(body),
   });
   if (!res.ok) {
-    let errMsg = `HTTP ${res.status}`;
-    try {
-      const errData = await res.json();
-      if (errData && errData.message) errMsg = errData.message;
-    } catch (_) {}
-    throw new Error(errMsg);
+    let msg = `HTTP ${res.status}`;
+    try { const d = await res.json(); msg = d.message || msg; } catch (_) {}
+    throw new Error(msg);
   }
   return res.json();
 }
 
+// ── Toast Notifications ────────────────────────────────────────────────────
+const TOAST_ICONS = { success: "✅", error: "⚠️", info: "ℹ️" };
+
+function showToast(message, type = "success", duration = 3200) {
+  const container = document.getElementById("toast-container");
+  const toast = document.createElement("div");
+  toast.className = `toast toast-${type}`;
+  toast.innerHTML = `<span class="toast-icon">${TOAST_ICONS[type] || "ℹ️"}</span><span>${message}</span>`;
+  container.appendChild(toast);
+
+  // Animate in
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => toast.classList.add("show"));
+  });
+
+  // Animate out + remove
+  setTimeout(() => {
+    toast.classList.remove("show");
+    setTimeout(() => toast.remove(), 350);
+  }, duration);
+}
+
+// ── CTA Loading State ──────────────────────────────────────────────────────
+/**
+ * Sets a button into a loading state and returns a restore function.
+ * @param {HTMLButtonElement} btn
+ * @param {string} loadingText - Text to show while loading
+ * @returns {Function} Restore function — call when done
+ */
+function setCtaLoading(btn, loadingText = "Loading…") {
+  const originalHTML = btn.innerHTML;
+  btn.disabled = true;
+  btn.classList.add("loading");
+  btn.innerHTML = `<span class="btn-spinner"></span>${loadingText}`;
+  return () => {
+    btn.disabled = false;
+    btn.classList.remove("loading");
+    btn.innerHTML = originalHTML;
+  };
+}
+
+// ── Skeleton Loader ────────────────────────────────────────────────────────
+function showSkeletonLoader(count = 2) {
+  const results = document.getElementById("results");
+  results.style.display = "block";
+  let html = "";
+  for (let i = 0; i < count; i++) {
+    html += `
+      <div class="skeleton-card">
+        <div class="skel-left">
+          <div class="skel" style="height:10px;width:50%"></div>
+          <div class="skel" style="height:18px;width:80%"></div>
+          <div class="skel" style="height:13px;width:60%"></div>
+          <div class="skel" style="height:11px;width:90%;margin-top:4px"></div>
+          <div class="skel" style="height:11px;width:70%"></div>
+        </div>
+        <div class="skel skel-right"></div>
+      </div>`;
+  }
+  document.getElementById("results-content").innerHTML = html;
+  results.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// ── Standard Loading & Error ───────────────────────────────────────────────
 function showLoading(text = "Finding the perfect meal…") {
   const results = document.getElementById("results");
   results.style.display = "block";
@@ -87,79 +135,85 @@ function showLoading(text = "Finding the perfect meal…") {
 }
 
 function showError(msg) {
+  document.getElementById("results").style.display = "block";
   document.getElementById("results-content").innerHTML = `
-    <div class="error-state">😕 ${msg || "Something went wrong. Try again."}</div>`;
+    <div class="error-state">😕 ${msg || "Something went wrong. Please try again."}</div>`;
 }
 
-function renderStars(rating)     { return `<span class="rating-badge"><span class="star-icon">★</span> ${rating.toFixed(1)}</span>`; }
-function renderSpice(level)      { return ["","🌶️ Mild","🌶️🌶️ Medium","🌶️🌶️🌶️ Spicy"][level]||""; }
-function deliveryMinutes(km)     { return `~${Math.round(km*4+10)} min`; }
-function vegDot(isVeg)           { return `<span class="veg-dot ${isVeg?"veg":"nonveg"}"></span>`; }
+// ── Render Helpers ─────────────────────────────────────────────────────────
+function renderStars(rating)  { return `<span class="rating-badge">★ ${rating.toFixed(1)}</span>`; }
+function renderSpice(level)   { return ["","🌶️ Mild","🌶️🌶️ Medium","🌶️🌶️🌶️ Spicy"][level] || ""; }
+function deliveryMinutes(km)  { return `~${Math.round(km * 4 + 10)} min`; }
+function vegDot(isVeg)        { return `<span class="veg-dot ${isVeg ? "veg" : "nonveg"}"></span>`; }
+
 function timeAgo(isoString) {
   const diff = Date.now() - new Date(isoString).getTime();
-  const m = Math.floor(diff/60000), h = Math.floor(m/60), d = Math.floor(h/24);
-  if (d>0) return `${d}d ago`;
-  if (h>0) return `${h}h ago`;
-  if (m>0) return `${m}m ago`;
+  const m = Math.floor(diff / 60000), h = Math.floor(m / 60), d = Math.floor(h / 24);
+  if (d > 0) return `${d}d ago`;
+  if (h > 0) return `${h}h ago`;
+  if (m > 0) return `${m}m ago`;
   return "just now";
 }
 
-// ── Image configuration based on dish name and tags ────────────────────────
+// ── Dish Image Config (emoji + gradient per cuisine/dish) ──────────────────
 function getDishImageConfig(dishName, tags, cuisine) {
-  const nameLower = dishName.toLowerCase();
-  const tagsString = (tags || []).join(" ").toLowerCase();
-  const cuisineLower = (cuisine || "").toLowerCase();
+  const n = dishName.toLowerCase();
+  const t = (tags || []).join(" ").toLowerCase();
+  const c = (cuisine || "").toLowerCase();
 
-  if (nameLower.includes("biryani") || tagsString.includes("biryani")) {
-    return { gradient: "linear-gradient(135deg, #fff2eb 0%, #ffdcd0 100%)", border: "#ffc2b2", emoji: "🍛" };
-  }
-  if (nameLower.includes("pizza") || tagsString.includes("pizza")) {
-    return { gradient: "linear-gradient(135deg, #fff7eb 0%, #ffe9cc 100%)", border: "#ffd49f", emoji: "🍕" };
-  }
-  if (nameLower.includes("burger") || tagsString.includes("burger")) {
-    return { gradient: "linear-gradient(135deg, #f4fbeb 0%, #e0f6ca 100%)", border: "#cbe8ae", emoji: "🍔" };
-  }
-  if (nameLower.includes("salad") || nameLower.includes("bowl") || tagsString.includes("salad") || tagsString.includes("healthy") || cuisineLower.includes("salad")) {
-    return { gradient: "linear-gradient(135deg, #edfbf3 0%, #caf5dc 100%)", border: "#acecc5", emoji: "🥗" };
-  }
-  if (nameLower.includes("paneer") || nameLower.includes("dal") || nameLower.includes("chole") || nameLower.includes("curry") || cuisineLower.includes("indian")) {
-    return { gradient: "linear-gradient(135deg, #fffbeb 0%, #fff2be 100%)", border: "#ffe69d", emoji: "🍲" };
-  }
-  if (nameLower.includes("dosa") || nameLower.includes("idli") || nameLower.includes("vada") || cuisineLower.includes("south")) {
-    return { gradient: "linear-gradient(135deg, #fbf7ee 0%, #eee1cf 100%)", border: "#dfcfb9", emoji: "🥞" };
-  }
-  if (nameLower.includes("egg") || nameLower.includes("omelette")) {
-    return { gradient: "linear-gradient(135deg, #fbfbef 0%, #f6f6d0 100%)", border: "#ebd6b3", emoji: "🍳" };
-  }
-  return { gradient: "linear-gradient(135deg, #f4f5f8 0%, #e9e9eb 100%)", border: "#d3d3d7", emoji: "🍽️" };
+  if (n.includes("biryani") || t.includes("biryani"))
+    return { gradient: "linear-gradient(135deg,#fff2eb,#ffdcd0)", border: "#ffc2b2", emoji: "🍛" };
+  if (n.includes("pizza") || t.includes("pizza"))
+    return { gradient: "linear-gradient(135deg,#fff7eb,#ffe9cc)", border: "#ffd49f", emoji: "🍕" };
+  if (n.includes("burger") || t.includes("burger"))
+    return { gradient: "linear-gradient(135deg,#f4fbeb,#e0f6ca)", border: "#cbe8ae", emoji: "🍔" };
+  if (n.includes("salad") || n.includes("bowl") || t.includes("salad") || t.includes("healthy"))
+    return { gradient: "linear-gradient(135deg,#edfbf3,#caf5dc)", border: "#acecc5", emoji: "🥗" };
+  if (n.includes("pasta") || n.includes("noodle") || n.includes("spaghetti"))
+    return { gradient: "linear-gradient(135deg,#fef9ee,#fdecd0)", border: "#fbd9a2", emoji: "🍝" };
+  if (n.includes("paneer") || n.includes("dal") || n.includes("chole") || n.includes("curry") || c.includes("north indian"))
+    return { gradient: "linear-gradient(135deg,#fffbeb,#fff2be)", border: "#ffe69d", emoji: "🍲" };
+  if (n.includes("dosa") || n.includes("idli") || n.includes("vada") || c.includes("south"))
+    return { gradient: "linear-gradient(135deg,#fbf7ee,#eee1cf)", border: "#dfcfb9", emoji: "🥞" };
+  if (n.includes("egg") || n.includes("omelette"))
+    return { gradient: "linear-gradient(135deg,#fbfbef,#f6f6d0)", border: "#ebd6b3", emoji: "🍳" };
+  if (n.includes("chicken") || n.includes("kebab") || n.includes("tikka"))
+    return { gradient: "linear-gradient(135deg,#fff0eb,#ffd8cc)", border: "#ffb8a2", emoji: "🍗" };
+  if (n.includes("sandwich") || n.includes("wrap"))
+    return { gradient: "linear-gradient(135deg,#f8fff0,#e4f9cc)", border: "#c8f0a0", emoji: "🥪" };
+  return { gradient: "linear-gradient(135deg,#f4f5f8,#e9e9eb)", border: "#d3d3d7", emoji: "🍽️" };
 }
 
-// ── Specific Dish Ordering Flow (Mood/Alternative One-Click Checkout) ───────
+// ── One-Click Dish Ordering ────────────────────────────────────────────────
 async function orderSpecificDish(dishId, dishName) {
-  showLoading(`Placing order for ${dishName}…`);
+  showSkeletonLoader(1);
+  showToast(`Ordering ${dishName}…`, "info", 2000);
   try {
-    const orderData = await postJSON("/api/surprise", {
-      budget: 800, // bypass standard budget filter when ordering explicitly
+    const data = await postJSON("/api/surprise", {
+      budget: 800,
       veg: false,
       retryDishId: dishId
     });
-    renderSurpriseResult(orderData);
+    renderSurpriseResult(data);
   } catch (err) {
-    showError(err.message || "Couldn't place order choice.");
+    showError(err.message || "Couldn't place order.");
+    showToast("Order failed. Please retry.", "error");
   }
 }
 
-// Bind helper to global scope for inline button onclick attributes
+// Expose to global scope for inline onclick attributes
 window.orderSpecificDish = orderSpecificDish;
 
-// ── Card Renderer ─────────────────────────────────────────────────────────
-function renderCard(rec, badgeClass, badgeLabel) {
+// ── Card Renderer (Swiggy Split Format) ───────────────────────────────────
+function renderCard(rec, badgeClass, badgeLabel, index = 0) {
   const { restaurant, dish, reason } = rec;
-  const imgConfig = getDishImageConfig(dish.name, dish.tags, restaurant.cuisine);
+  const img = getDishImageConfig(dish.name, dish.tags, restaurant.cuisine);
+  const safeName = dish.name.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+
   return `
-    <div class="result-card ${badgeClass==="top"?"top-pick":""}">
+    <div class="result-card" style="animation-delay:${index * 80}ms">
       <div class="card-left">
-        <div style="display: flex; align-items: center; gap: 8px;">
+        <div style="display:flex;align-items:center;gap:8px">
           ${vegDot(dish.isVeg)}
           ${badgeLabel ? `<span class="card-badge ${badgeClass}">${badgeLabel}</span>` : ""}
         </div>
@@ -175,26 +229,32 @@ function renderCard(rec, badgeClass, badgeLabel) {
         <p class="card-reason">${reason}</p>
       </div>
       <div class="card-right">
-        <div class="dish-image-box" style="background: ${imgConfig.gradient}; border-color: ${imgConfig.border};">
-          ${imgConfig.emoji}
+        <div class="dish-image-box"
+          style="background:${img.gradient};border-color:${img.border}">
+          ${img.emoji}
         </div>
-        <button class="dish-order-btn" onclick="orderSpecificDish('${dish.id}', '${dish.name.replace(/'/g, "\\'")}')" title="Order this now">Order Now</button>
+        <button class="dish-order-btn"
+          onclick="orderSpecificDish('${dish.id}','${safeName}')"
+          title="Order ${dish.name} now">
+          + ORDER
+        </button>
       </div>
     </div>`;
 }
 
+// ── Surprise Me Result ─────────────────────────────────────────────────────
 function renderSurpriseResult(data) {
-  if (!data.pick) { showError(data.message || "No matches found. Adjust filters."); return; }
+  if (!data.pick) { showError(data.message || "No matches found. Try adjusting filters."); return; }
+
   let html = `<p class="results-label">Your Pick</p>`;
-  html += renderCard(data.pick, "top", "🏆 TOP PICK");
-  
+  html += renderCard(data.pick, "top", "🏆 TOP PICK", 0);
+
   if (data.order) {
-    // Generate bill details breakdown matching Swiggy fees
-    const subtotal = data.pick.dish.price;
-    const deliveryFee = 30;
-    const packagingCharge = 15;
-    const tax = Math.round(subtotal * 0.05);
-    const totalBill = subtotal + deliveryFee + packagingCharge + tax;
+    const subtotal    = data.pick.dish.price;
+    const delivery    = 30;
+    const packaging   = 15;
+    const tax         = Math.round(subtotal * 0.05);
+    const total       = subtotal + delivery + packaging + tax;
 
     html += `
       <div class="order-placed-card">
@@ -202,8 +262,7 @@ function renderSurpriseResult(data) {
           <div class="success-icon-badge">✓</div>
           <span class="success-title">Order Placed on Swiggy!</span>
         </div>
-        
-        <!-- Step-by-step progress tracking bar -->
+
         <div class="order-progress-bar">
           <div class="progress-line-fill"></div>
           <div class="progress-step completed">
@@ -226,30 +285,29 @@ function renderSurpriseResult(data) {
             <span>₹${subtotal}</span>
           </div>
           <div class="receipt-row">
-            <span>Delivery Partner Fee</span>
-            <span>₹${deliveryFee}</span>
+            <span>Delivery Partner Fee</span><span>₹${delivery}</span>
           </div>
           <div class="receipt-row">
-            <span>Restaurant Packaging Charges</span>
-            <span>₹${packagingCharge}</span>
+            <span>Restaurant Packaging</span><span>₹${packaging}</span>
           </div>
           <div class="receipt-row">
-            <span>GST &amp; Restaurant Taxes</span>
-            <span>₹${tax}</span>
+            <span>GST &amp; Taxes</span><span>₹${tax}</span>
           </div>
           <div class="receipt-row total">
-            <span>Bill Total</span>
-            <span>₹${totalBill}</span>
+            <span>Bill Total</span><span>₹${total}</span>
           </div>
         </div>
 
-        <div style="margin-bottom: 16px; font-size: 13px; color: var(--text-2);">
-          <p style="margin-bottom: 4px;"><strong>Order ID:</strong> <code>${data.order.orderId}</code></p>
-          <p><strong>Estimated Delivery Time:</strong> ${data.order.etaMinutes} mins</p>
+        <div style="margin-bottom:16px;font-size:13px;color:var(--text-2)">
+          <p style="margin-bottom:4px"><strong>Order ID:</strong> <code>${data.order.orderId}</code></p>
+          <p><strong>ETA:</strong> ${data.order.etaMinutes} mins</p>
         </div>
 
-        <a href="${data.order.trackUrl}" target="_blank" class="track-link-btn">📍 Track Live Order</a>
+        <a href="${data.order.trackUrl}" target="_blank" rel="noopener" class="track-link-btn">
+          📍 Track Live Order
+        </a>
       </div>`;
+
   } else if (data.error) {
     html += `
       <div class="checkout-failed-card">
@@ -258,88 +316,135 @@ function renderSurpriseResult(data) {
           <span class="failed-title">Checkout Failed</span>
         </div>
         <div class="checkout-failed-details">
-          <p class="error-msg">Swiggy MCP error: <strong>${data.error}</strong>. Your choice has been preserved. You can retry ordering directly below.</p>
-          <button class="retry-checkout-btn" id="btn-retry-checkout" data-dish-id="${data.pick.dish.id}">🔄 Retry Checkout Choice</button>
+          <p class="error-msg">Swiggy MCP error: <strong>${data.error}</strong>. Your pick is saved — retry below.</p>
+          <button class="retry-checkout-btn" id="btn-retry-checkout" data-dish-id="${data.pick.dish.id}">
+            🔄 Retry Checkout
+          </button>
         </div>
       </div>`;
   }
-  
-  if (data.saved) html += `<p class="saved-badge">✓ Saved to order history</p>`;
-  html += `<button class="reshuffle-btn" id="btn-reshuffle">🔀 Try Another Surprise</button>`;
-  if (data.alternatives?.length) {
-    html += `<p class="alt-header">Alternatives</p>`;
-    data.alternatives.forEach((alt,i) => { html += renderCard(alt,"alt",`#${i+2}`); });
-  }
-  document.getElementById("results-content").innerHTML = html;
-  document.getElementById("btn-reshuffle").addEventListener("click", () => document.getElementById("btn-surprise").click());
 
-  // Wire retry button if it exists
+  if (data.saved) html += `<p class="saved-badge">✅ Saved to order history</p>`;
+
+  html += `<button class="reshuffle-btn" id="btn-reshuffle">🔀 Try Another Surprise</button>`;
+
+  if (data.alternatives?.length) {
+    html += `<p class="alt-header">You Might Also Like</p>`;
+    data.alternatives.forEach((alt, i) => { html += renderCard(alt, "alt", `#${i + 2}`, i + 1); });
+  }
+
+  document.getElementById("results-content").innerHTML = html;
+
+  // Wire reshuffle
+  document.getElementById("btn-reshuffle")?.addEventListener("click", () => {
+    document.getElementById("btn-surprise").click();
+  });
+
+  // Wire retry
   const retryBtn = document.getElementById("btn-retry-checkout");
   if (retryBtn) {
     retryBtn.addEventListener("click", async () => {
-      const dishId = retryBtn.getAttribute("data-dish-id");
-      showLoading("Retrying order placement…");
+      const dishId  = retryBtn.getAttribute("data-dish-id");
+      const restore = setCtaLoading(retryBtn, "Retrying…");
       try {
-        const retryData = await postJSON("/api/surprise", {
-          budget: Number(budgetSlider.value),
+        const d = await postJSON("/api/surprise", {
+          budget: Number(document.getElementById("budget-slider").value),
           veg: surpriseVeg,
           spiceLevel: surpriseSpice,
           retryDishId: dishId
         });
-        renderSurpriseResult(retryData);
+        renderSurpriseResult(d);
+        showToast("Order placed!", "success");
       } catch (err) {
-        showError(err.message || "Couldn't reach the server.");
+        restore();
+        showError(err.message || "Couldn't reach server.");
+        showToast("Retry failed — please try again.", "error");
       }
     });
   }
+
+  // Toast on success
+  if (data.order) {
+    showToast(`🎉 ${data.pick.dish.name} ordered!`, "success");
+  }
 }
 
+// ── Mood Result ────────────────────────────────────────────────────────────
 function renderMoodResult(data) {
-  if (!data.results?.length) { showError(data.message || "No meals found."); return; }
-  const label = data.mood.replace("-"," ").replace(/\b\w/g,c=>c.toUpperCase());
+  if (!data.results?.length) { showError(data.message || "No meals found for this mood."); return; }
+  const label = data.mood.replace("-", " ").replace(/\b\w/g, c => c.toUpperCase());
   let html = `<p class="results-label">${data.results.length} picks for "${label}"</p>`;
-  data.results.forEach((rec,i) => {
-    html += renderCard(rec, i===0?"top":"alt", i===0?"🏆 BEST MATCH":`#${i+1}`);
+  data.results.forEach((rec, i) => {
+    html += renderCard(rec, i === 0 ? "top" : "alt", i === 0 ? "🏆 BEST MATCH" : `#${i + 1}`, i);
   });
   document.getElementById("results-content").innerHTML = html;
 }
 
+// ── Schedule Preview Result ────────────────────────────────────────────────
 function renderScheduleResult(data) {
-  if (!data.schedule?.length) { showError(data.message||"Couldn't build a plan."); return; }
-  let html = `<div class="week-header"><h3>📅 Your Week Plan</h3><p>${data.schedule.length} day${data.schedule.length>1?"s":""} planned &middot; ${data.schedule[0].time}</p></div>`;
-  data.schedule.forEach(meal => {
-    const r = meal.recommendation;
+  if (!data.schedule?.length) { showError(data.message || "Couldn't build a plan."); return; }
+  let html = `
+    <div class="week-header">
+      <h3>📅 Your Week Plan</h3>
+      <p>${data.schedule.length} meal${data.schedule.length > 1 ? "s" : ""} planned &middot; ${data.schedule[0].time}</p>
+    </div>`;
+  data.schedule.forEach((meal, i) => {
+    const r   = meal.recommendation;
+    const img = getDishImageConfig(r.dish.name, r.dish.tags, r.restaurant.cuisine);
     html += `
-      <div class="result-card">
-        <span class="card-badge day">📅 ${meal.day}</span>
-        <div class="card-header">
+      <div class="result-card" style="animation-delay:${i * 80}ms">
+        <div class="card-left">
+          <span class="card-badge day">📅 ${meal.day}</span>
           <span class="dish-name">${r.dish.name}</span>
           <span class="dish-price">₹${r.dish.price}</span>
+          <div class="restaurant-name">${r.restaurant.name} &middot; ${r.restaurant.cuisine}</div>
+          <div class="card-meta">
+            <span class="meta-pill">${renderStars(r.restaurant.rating)}</span>
+            <span class="meta-pill">📍 ${r.restaurant.distanceKm} km</span>
+            <span class="meta-pill">${vegDot(r.dish.isVeg)}</span>
+          </div>
+          <p class="card-reason">${r.reason}</p>
         </div>
-        <p class="restaurant-name">${r.restaurant.name} &middot; ${r.restaurant.cuisine}</p>
-        <div class="card-meta">
-          <span class="meta-pill">${renderStars(r.restaurant.rating)}</span>
-          <span class="meta-pill">📍 ${r.restaurant.distanceKm} km</span>
-          <span class="meta-pill">${vegDot(r.dish.isVeg)}</span>
+        <div class="card-right">
+          <div class="dish-image-box" style="background:${img.gradient};border-color:${img.border}">
+            ${img.emoji}
+          </div>
         </div>
-        <p class="card-reason">${r.reason}</p>
       </div>`;
   });
   document.getElementById("results-content").innerHTML = html;
 }
 
-// ── History Tab ───────────────────────────────────────────────────────────
+// ── History Tab ────────────────────────────────────────────────────────────
 async function loadHistory() {
   const list = document.getElementById("history-list");
-  list.innerHTML = `<div class="loading-state"><div class="spinner"></div><p>Loading…</p></div>`;
+  list.innerHTML = `
+    <div class="skeleton-card" style="margin:0 18px 10px">
+      <div class="skel-left">
+        <div class="skel" style="height:16px;width:70%"></div>
+        <div class="skel" style="height:12px;width:50%"></div>
+        <div class="skel" style="height:11px;width:80%"></div>
+      </div>
+    </div>
+    <div class="skeleton-card" style="margin:0 18px 10px">
+      <div class="skel-left">
+        <div class="skel" style="height:16px;width:65%"></div>
+        <div class="skel" style="height:12px;width:45%"></div>
+        <div class="skel" style="height:11px;width:75%"></div>
+      </div>
+    </div>`;
+
   try {
     const data = await getJSON("/api/history");
     if (!data.orders.length) {
-      list.innerHTML = `<div class="empty-state"><div class="empty-icon">🍽️</div><p>No orders yet. Use Surprise Me or Mood to get started!</p></div>`;
+      list.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">🍽️</div>
+          <p>No orders yet. Use Surprise Me or Moods to get started!</p>
+        </div>`;
       return;
     }
     list.innerHTML = data.orders.map(order => buildHistoryCard(order)).join("");
-    // Attach feedback handlers
     data.orders.forEach(order => attachFeedbackHandlers(order));
   } catch {
     list.innerHTML = `<div class="error-state">😕 Couldn't load history. Is the backend running?</div>`;
@@ -347,19 +452,25 @@ async function loadHistory() {
 }
 
 function buildHistoryCard(order) {
-  const flowLabel = { surprise:"🎲 Surprise", mood:"😊 Mood", schedule:"📅 Schedule", cron:"⚡ Auto" }[order.flow] || order.flow;
+  const flowLabel = {
+    surprise: "🎲 Surprise",
+    mood:     "😊 Mood",
+    schedule: "📅 Schedule",
+    cron:     "⚡ Auto"
+  }[order.flow] || order.flow;
+
   const fb = order.feedback;
   let feedbackHtml = "";
 
   if (fb) {
-    const ratingIcon = fb.rating === "liked" ? "👍" : "👎";
+    const icon = fb.rating === "liked" ? "👍" : "👎";
     const tags = fb.tags ? fb.tags.split(",").filter(Boolean) : [];
     feedbackHtml = `
       <div class="feedback-section">
         <div class="feedback-given">
-          <span class="rating-icon">${ratingIcon}</span>
+          <span class="rating-icon">${icon}</span>
           <span>${fb.rating === "liked" ? "You liked this" : "You disliked this"}</span>
-          ${tags.map(t=>`<span class="feedback-tag">${t.replace(/_/g," ")}</span>`).join("")}
+          ${tags.map(t => `<span class="feedback-tag">${t.replace(/_/g, " ")}</span>`).join("")}
         </div>
       </div>`;
   } else {
@@ -397,113 +508,103 @@ function buildHistoryCard(order) {
 }
 
 function attachFeedbackHandlers(order) {
-  if (order.feedback) return; // already rated
+  if (order.feedback) return;
 
-  const selectedRatings = new Map(); // orderId → rating
-  const selectedTags    = new Map(); // orderId → Set<tag>
+  const selectedRatings = new Map();
+  const selectedTags    = new Map();
   selectedTags.set(order.id, new Set());
 
-  // Rating buttons
   document.querySelectorAll(`.fb-btn[data-order="${order.id}"]`).forEach(btn => {
     btn.addEventListener("click", () => {
       selectedRatings.set(order.id, btn.dataset.rating);
       document.querySelectorAll(`.fb-btn[data-order="${order.id}"]`).forEach(b => b.classList.remove("selected"));
       btn.classList.add("selected");
-      // Show tags
-      const tagsEl = document.getElementById(`fb-tags-${order.id}`);
-      if (tagsEl) tagsEl.style.display = "flex";
-      // Enable submit
-      const submitEl = document.getElementById(`fb-submit-${order.id}`);
-      if (submitEl) submitEl.disabled = false;
+      document.getElementById(`fb-tags-${order.id}`)?.style.setProperty("display", "flex");
+      const submit = document.getElementById(`fb-submit-${order.id}`);
+      if (submit) submit.disabled = false;
     });
   });
 
-  // Tag chips
-  const tagsContainer = document.getElementById(`fb-tags-${order.id}`);
-  if (tagsContainer) {
-    tagsContainer.querySelectorAll(".fb-tag").forEach(tag => {
-      tag.addEventListener("click", () => {
-        const t = tag.dataset.tag;
-        const set = selectedTags.get(order.id);
-        if (set.has(t)) { set.delete(t); tag.classList.remove("selected"); }
-        else { set.add(t); tag.classList.add("selected"); }
-      });
+  document.getElementById(`fb-tags-${order.id}`)?.querySelectorAll(".fb-tag").forEach(tag => {
+    tag.addEventListener("click", () => {
+      const set = selectedTags.get(order.id);
+      if (set.has(tag.dataset.tag)) { set.delete(tag.dataset.tag); tag.classList.remove("selected"); }
+      else { set.add(tag.dataset.tag); tag.classList.add("selected"); }
     });
-  }
+  });
 
-  // Submit
-  const submitBtn = document.getElementById(`fb-submit-${order.id}`);
-  if (submitBtn) {
-    submitBtn.addEventListener("click", async () => {
+  const submit = document.getElementById(`fb-submit-${order.id}`);
+  if (submit) {
+    submit.addEventListener("click", async () => {
       const rating = selectedRatings.get(order.id);
       const tags   = [...(selectedTags.get(order.id) || [])];
       if (!rating) return;
-      submitBtn.disabled = true;
-      submitBtn.textContent = "Saving…";
+
+      const restore = setCtaLoading(submit, "Saving…");
       try {
         await postJSON("/api/feedback", { orderHistoryId: order.id, rating, tags });
         const section = document.getElementById(`fb-section-${order.id}`);
         if (section) {
-          const icon = rating === "liked" ? "👍" : "👎";
-          const tagHtml = tags.map(t=>`<span class="feedback-tag">${t.replace(/_/g," ")}</span>`).join("");
+          const icon    = rating === "liked" ? "👍" : "👎";
+          const tagHtml = tags.map(t => `<span class="feedback-tag">${t.replace(/_/g, " ")}</span>`).join("");
           section.innerHTML = `<div class="feedback-given"><span class="rating-icon">${icon}</span><span>Feedback saved!</span>${tagHtml}</div>`;
         }
+        showToast("Feedback saved! We'll use this to improve your picks.", "success");
       } catch {
-        submitBtn.disabled = false;
-        submitBtn.textContent = "Try again";
+        restore();
+        submit.textContent = "Try again";
+        showToast("Couldn't save feedback.", "error");
       }
     });
   }
 }
 
-// ── Saved Schedules ───────────────────────────────────────────────────────
+// ── Saved Schedules ────────────────────────────────────────────────────────
 async function loadSavedSchedules() {
   try {
-    const data = await getJSON("/api/schedules");
+    const data    = await getJSON("/api/schedules");
     const section = document.getElementById("saved-schedules-section");
     const list    = document.getElementById("saved-schedules-list");
 
-    if (!data.schedules.length) {
-      section.style.display = "none";
-      return;
-    }
+    if (!data.schedules.length) { section.style.display = "none"; return; }
+
     section.style.display = "block";
     list.innerHTML = data.schedules.map(s => buildScheduleItem(s)).join("");
     data.schedules.forEach(s => attachScheduleHandlers(s));
-  } catch { /* silent — history won't show */ }
+  } catch { /* silent */ }
 }
 
 function buildScheduleItem(s) {
   const isActive = s.active;
-  const days = s.days.split(",").join(" · ");
+  const days     = s.days.split(",").join(" · ");
   return `
-    <div class="saved-schedule-item ${isActive?"active-item":"paused-item"}" id="sitem-${s.id}">
-      <span class="active-dot ${isActive?"on":"off"}"></span>
+    <div class="saved-schedule-item ${isActive ? "active-item" : "paused-item"}" id="sitem-${s.id}">
+      <span class="active-dot ${isActive ? "on" : "off"}"></span>
       <div class="sched-info">
         <p class="sched-name">${s.label}</p>
-        <p class="sched-meta">⏰ ${s.time} &nbsp;·&nbsp; ${days} &nbsp;·&nbsp; ₹${s.budget} &nbsp;·&nbsp; ${s.veg?"🌿":"🍗"}</p>
+        <p class="sched-meta">⏰ ${s.time} &nbsp;·&nbsp; ${days} &nbsp;·&nbsp; ₹${s.budget} &nbsp;·&nbsp; ${s.veg ? "🌿" : "🍗"}</p>
       </div>
       <div class="sched-actions">
-        <button class="icon-btn" title="${isActive?"Pause":"Activate"}" data-sched-id="${s.id}" data-toggle="${!isActive}">${isActive?"⏸":"▶️"}</button>
+        <button class="icon-btn" title="${isActive ? "Pause" : "Activate"}"
+          data-sched-id="${s.id}" data-toggle="${!isActive}">${isActive ? "⏸" : "▶️"}</button>
         <button class="icon-btn danger" title="Delete" data-sched-delete="${s.id}">🗑</button>
       </div>
     </div>`;
 }
 
 function attachScheduleHandlers(s) {
-  // Toggle active
   const toggleBtn = document.querySelector(`[data-sched-id="${s.id}"]`);
   if (toggleBtn) {
     toggleBtn.addEventListener("click", async () => {
       const newActive = toggleBtn.dataset.toggle === "true";
       try {
         await patchJSON(`/api/schedules/${s.id}`, { active: newActive });
-        loadSavedSchedules(); // refresh
-      } catch { alert("Could not update schedule."); }
+        showToast(newActive ? "Schedule activated!" : "Schedule paused.", "info");
+        loadSavedSchedules();
+      } catch { showToast("Couldn't update schedule.", "error"); }
     });
   }
 
-  // Delete
   const deleteBtn = document.querySelector(`[data-sched-delete="${s.id}"]`);
   if (deleteBtn) {
     deleteBtn.addEventListener("click", async () => {
@@ -513,30 +614,79 @@ function attachScheduleHandlers(s) {
         document.getElementById(`sitem-${s.id}`)?.remove();
         const list = document.getElementById("saved-schedules-list");
         if (!list?.children.length) document.getElementById("saved-schedules-section").style.display = "none";
-      } catch { alert("Could not delete schedule."); }
+        showToast("Schedule deleted.", "info");
+      } catch { showToast("Couldn't delete schedule.", "error"); }
     });
   }
 }
 
-// ── Tab Switching ─────────────────────────────────────────────────────────
-document.querySelectorAll(".tab-btn").forEach(btn => {
+// ── Quick Filter Pills ─────────────────────────────────────────────────────
+const budgetSlider  = document.getElementById("budget-slider");
+const budgetDisplay = document.getElementById("budget-display");
+
+document.getElementById("quick-filters")?.addEventListener("click", (e) => {
+  const pill   = e.target.closest(".filter-pill");
+  if (!pill) return;
+
+  // Toggle active state
+  document.querySelectorAll(".filter-pill").forEach(p => p.classList.remove("active"));
+  pill.classList.add("active");
+
+  // Pre-fill form and auto-trigger
+  const filter = pill.dataset.filter;
+
+  if (filter === "veg") {
+    // Set veg
+    surpriseVeg = true;
+    document.getElementById("toggle-veg").classList.add("active");
+    document.getElementById("toggle-nonveg").classList.remove("active");
+  }
+  if (filter === "budget") {
+    // Set budget to ₹150
+    budgetSlider.value   = 150;
+    budgetDisplay.textContent = "₹150";
+  }
+  if (filter === "fast") {
+    // Shorter delivery = nearby = lower budget cap
+    budgetSlider.value   = 250;
+    budgetDisplay.textContent = "₹250";
+  }
+
+  // Auto-trigger surprise
+  setTimeout(() => document.getElementById("btn-surprise").click(), 120);
+});
+
+// ── Tab Switching (Bottom Nav) ─────────────────────────────────────────────
+document.querySelectorAll(".nav-btn").forEach(btn => {
   btn.addEventListener("click", () => {
     const tab = btn.dataset.tab;
-    document.querySelectorAll(".tab-btn").forEach(b => { b.classList.remove("active"); b.setAttribute("aria-selected","false"); });
+
+    document.querySelectorAll(".nav-btn").forEach(b => {
+      b.classList.remove("active");
+      b.setAttribute("aria-selected", "false");
+    });
     document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+
     btn.classList.add("active");
-    btn.setAttribute("aria-selected","true");
-    document.getElementById(`tab-${tab}`).classList.add("active");
+    btn.setAttribute("aria-selected", "true");
+    document.getElementById(`tab-${tab}`)?.classList.add("active");
     document.getElementById("results").style.display = "none";
-    if (tab === "history") loadHistory();
+
+    // Lazy load data on tab switch
+    if (tab === "history")  loadHistory();
     if (tab === "schedule") loadSavedSchedules();
+
+    // Scroll to top of content on tab switch
+    document.getElementById("scroll-area")?.scrollTo({ top: 0, behavior: "smooth" });
   });
 });
 
-// ── Surprise Controls ─────────────────────────────────────────────────────
-const budgetSlider  = document.getElementById("budget-slider");
-const budgetDisplay = document.getElementById("budget-display");
-budgetSlider.addEventListener("input", () => { budgetDisplay.textContent = `₹${budgetSlider.value}`; });
+// ── Surprise Controls ──────────────────────────────────────────────────────
+budgetSlider.addEventListener("input", () => {
+  budgetDisplay.textContent = `₹${budgetSlider.value}`;
+  // Clear quick filter active state if user manually adjusts
+  document.querySelectorAll(".filter-pill").forEach(p => p.classList.remove("active"));
+});
 
 document.getElementById("toggle-veg").addEventListener("click", () => {
   surpriseVeg = true;
@@ -557,7 +707,7 @@ document.querySelectorAll(".spice-btn").forEach(btn => {
   });
 });
 
-// ── Mood Controls ─────────────────────────────────────────────────────────
+// ── Mood Controls ──────────────────────────────────────────────────────────
 document.querySelectorAll(".mood-chip").forEach(chip => {
   chip.addEventListener("click", () => {
     selectedMood = chip.dataset.mood;
@@ -565,14 +715,17 @@ document.querySelectorAll(".mood-chip").forEach(chip => {
     chip.classList.add("selected");
     const btn = document.getElementById("btn-mood");
     btn.disabled = false;
-    btn.setAttribute("aria-disabled","false");
+    btn.setAttribute("aria-disabled", "false");
   });
 });
 
-// ── Schedule Controls ─────────────────────────────────────────────────────
+// ── Schedule Controls ──────────────────────────────────────────────────────
 const schedBudgetSlider  = document.getElementById("sched-budget");
 const schedBudgetDisplay = document.getElementById("sched-budget-display");
-schedBudgetSlider.addEventListener("input", () => { schedBudgetDisplay.textContent = `₹${schedBudgetSlider.value}`; });
+
+schedBudgetSlider.addEventListener("input", () => {
+  schedBudgetDisplay.textContent = `₹${schedBudgetSlider.value}`;
+});
 
 document.querySelector(".sched-veg").addEventListener("click", () => {
   schedVeg = true;
@@ -596,59 +749,85 @@ function getScheduleFormData() {
   };
 }
 
-// ── API Button Handlers ───────────────────────────────────────────────────
+// ── API Button Handlers ────────────────────────────────────────────────────
+
+// Surprise Me
 document.getElementById("btn-surprise").addEventListener("click", async () => {
-  showLoading("Picking your surprise…");
+  const btn     = document.getElementById("btn-surprise");
+  const restore = setCtaLoading(btn, "Finding your pick…");
+  showSkeletonLoader(2);
   try {
-    const data = await postJSON("/api/surprise", { budget: Number(budgetSlider.value), veg: surpriseVeg, spiceLevel: surpriseSpice });
+    const data = await postJSON("/api/surprise", {
+      budget:     Number(budgetSlider.value),
+      veg:        surpriseVeg,
+      spiceLevel: surpriseSpice
+    });
     renderSurpriseResult(data);
-  } catch (err) { showError(err.message || "Couldn't reach the server."); }
-});
-
-document.getElementById("btn-mood").addEventListener("click", async () => {
-  if (!selectedMood) return;
-  showLoading("Matching your mood…");
-  try {
-    const data = await postJSON("/api/mood", { mood: selectedMood });
-    renderMoodResult(data);
-  } catch (err) { showError(err.message || "Couldn't reach the server."); }
-});
-
-// Preview plan (one-shot, no save)
-document.getElementById("btn-schedule").addEventListener("click", async () => {
-  const { days, time, budget, veg } = getScheduleFormData();
-  if (!days.length) { document.getElementById("results").style.display="block"; showError("Select at least one day."); return; }
-  showLoading(`Building your ${days.length}-day meal plan…`);
-  try {
-    const data = await postJSON("/api/schedule", { time, days, budget, veg });
-    renderScheduleResult(data);
-  } catch (err) { showError(err.message || "Couldn't reach the server."); }
-});
-
-// Save & Activate schedule (persists to DB, starts cron job)
-document.getElementById("btn-save-schedule").addEventListener("click", async () => {
-  const form = getScheduleFormData();
-  if (!form.days.length) { alert("Please select at least one day."); return; }
-  const btn = document.getElementById("btn-save-schedule");
-  btn.disabled = true;
-  btn.textContent = "Saving…";
-  try {
-    await postJSON("/api/schedules", form);
-    btn.textContent = "✅ Saved!";
-    loadSavedSchedules();
-    setTimeout(() => { btn.textContent = "💾 Save & Activate"; btn.disabled = false; }, 2000);
-  } catch {
-    btn.textContent = "💾 Save & Activate";
-    btn.disabled = false;
-    alert("Could not save the schedule.");
+  } catch (err) {
+    showError(err.message || "Couldn't reach the server.");
+    showToast("Request failed. Is the server running?", "error");
+  } finally {
+    restore();
   }
 });
 
-// History refresh button
+// Mood
+document.getElementById("btn-mood").addEventListener("click", async () => {
+  if (!selectedMood) return;
+  const btn     = document.getElementById("btn-mood");
+  const restore = setCtaLoading(btn, "Matching your mood…");
+  showSkeletonLoader(3);
+  try {
+    const data = await postJSON("/api/mood", { mood: selectedMood });
+    renderMoodResult(data);
+  } catch (err) {
+    showError(err.message || "Couldn't reach the server.");
+    showToast("Request failed.", "error");
+  } finally {
+    restore();
+  }
+});
+
+// Preview plan (no save)
+document.getElementById("btn-schedule").addEventListener("click", async () => {
+  const { days, time, budget, veg } = getScheduleFormData();
+  if (!days.length) { showError("Please select at least one day."); return; }
+  const btn     = document.getElementById("btn-schedule");
+  const restore = setCtaLoading(btn, "Building plan…");
+  showSkeletonLoader(days.length);
+  try {
+    const data = await postJSON("/api/schedule", { time, days, budget, veg });
+    renderScheduleResult(data);
+  } catch (err) {
+    showError(err.message || "Couldn't reach the server.");
+    showToast("Preview failed.", "error");
+  } finally {
+    restore();
+  }
+});
+
+// Save & Activate schedule
+document.getElementById("btn-save-schedule").addEventListener("click", async () => {
+  const form = getScheduleFormData();
+  if (!form.days.length) { alert("Please select at least one day."); return; }
+  const btn     = document.getElementById("btn-save-schedule");
+  const restore = setCtaLoading(btn, "Saving…");
+  try {
+    await postJSON("/api/schedules", form);
+    showToast("📅 Schedule activated! Meals will be auto-ordered.", "success");
+    loadSavedSchedules();
+    setTimeout(() => restore(), 1200);
+  } catch {
+    restore();
+    showToast("Could not save the schedule.", "error");
+  }
+});
+
+// History refresh
 document.getElementById("btn-refresh-history").addEventListener("click", loadHistory);
 
-// Auto-load saved schedules when schedule tab is the default open tab
-// (it's not the default, but init history early so the tab feels snappy)
+// ── Initialisation ─────────────────────────────────────────────────────────
 window.addEventListener("load", () => {
+  // Pre-load saved schedules in background so schedule tab feels instant
   loadSavedSchedules();
 });
