@@ -32,11 +32,12 @@ const activeJobs = new Map<string, ScheduledTask>();
 
 // ── Build cron expression from a Schedule row ──────────────────────────────
 function buildCronExpression(schedule: Schedule): string | null {
-  const [hStr, mStr] = schedule.time.split(":");
-  const h = Number(hStr);
-  const m = Number(mStr);
+  const parts = (schedule.time || "").split(":");
+  if (parts.length !== 2) return null;
+  const h = Number(parts[0]);
+  const m = Number(parts[1]);
 
-  if (isNaN(h) || isNaN(m)) return null;
+  if (isNaN(h) || isNaN(m) || h < 0 || h > 23 || m < 0 || m > 59) return null;
 
   const dayNums = schedule.days
     .split(",")
@@ -130,15 +131,19 @@ export function registerSchedule(schedule: Schedule): void {
     return;
   }
 
-  const task = cron.schedule(cronExpr, () => fireMealJob(schedule), {
-    timezone: "Asia/Kolkata",
-  });
+  try {
+    const task = cron.schedule(cronExpr, () => fireMealJob(schedule), {
+      timezone: "Asia/Kolkata",
+    });
 
-  activeJobs.set(schedule.id, task);
-  console.log(
-    `[CronWorker] ✅ Registered "${schedule.label}" → cron: "${cronExpr}" ` +
-    `(${activeJobs.size} total active)`
-  );
+    activeJobs.set(schedule.id, task);
+    console.log(
+      `[CronWorker] ✅ Registered "${schedule.label}" → cron: "${cronExpr}" ` +
+      `(${activeJobs.size} total active)`
+    );
+  } catch (err) {
+    console.error(`[CronWorker] ❌ Failed to register node-cron schedule "${schedule.label}":`, err);
+  }
 }
 
 // ── Unregister and stop a cron job ─────────────────────────────────────────

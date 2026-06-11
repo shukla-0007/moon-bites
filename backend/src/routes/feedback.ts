@@ -28,6 +28,24 @@ router.post("/", async (req, res) => {
     return res.status(400).json({ message: 'rating must be "liked" or "disliked".' });
   }
 
+  // 1. Sanitize note
+  let cleanNote = note;
+  if (cleanNote !== undefined && cleanNote !== null) {
+    cleanNote = String(cleanNote).trim().replace(/<[^>]*>/g, ""); // Strip HTML tags
+    if (cleanNote.length > 500) {
+      cleanNote = cleanNote.substring(0, 500);
+    }
+  }
+
+  // 2. Validate and sanitize tags
+  const validTags = ["too_spicy", "too_oily", "too_expensive", "perfect", "wrong_order"];
+  let cleanTags: string[] = [];
+  if (tags && Array.isArray(tags)) {
+    cleanTags = tags
+      .map(t => String(t).trim().toLowerCase())
+      .filter(t => validTags.includes(t));
+  }
+
   try {
     // Upsert: allow updating feedback if already exists
     const feedback = await prisma.feedback.upsert({
@@ -35,13 +53,13 @@ router.post("/", async (req, res) => {
       create: {
         orderHistoryId,
         rating,
-        tags: (tags || []).join(","),
-        note: note || null,
+        tags: cleanTags.join(","),
+        note: cleanNote || null,
       },
       update: {
         rating,
-        tags: (tags || []).join(","),
-        note: note || null,
+        tags: cleanTags.join(","),
+        note: cleanNote || null,
       },
     });
 

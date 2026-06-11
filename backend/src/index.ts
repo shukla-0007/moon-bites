@@ -39,8 +39,9 @@ app.use(express.static(path.join(__dirname, "..", "..", "frontend")));
 // ── Error Boundary ────────────────────────────────────────────────────────
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error("[Unhandled Error]:", err);
+  const isProd = process.env.NODE_ENV === "production";
   res.status(500).json({
-    error: err.message || "Internal Server Error",
+    error: isProd ? "Internal Server Error" : (err.message || "Internal Server Error"),
     code: "UNHANDLED_ERROR",
     message: "An unexpected server error occurred.",
   });

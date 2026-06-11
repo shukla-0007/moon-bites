@@ -10,6 +10,17 @@ let surpriseSpice = 1;
 let selectedMood  = null;
 let schedVeg      = true;
 
+// ── XSS Sanitization Helper ────────────────────────────────────────────────
+function escapeHtml(str) {
+  if (str === null || str === undefined) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 // ── HTTP Helpers ───────────────────────────────────────────────────────────
 async function postJSON(path, body) {
   const res = await fetch(path, {
@@ -66,7 +77,8 @@ function showToast(message, type = "success", duration = 3200) {
   const container = document.getElementById("toast-container");
   const toast = document.createElement("div");
   toast.className = `toast toast-${type}`;
-  toast.innerHTML = `<span class="toast-icon">${TOAST_ICONS[type] || "ℹ️"}</span><span>${message}</span>`;
+  toast.innerHTML = `<span class="toast-icon">${TOAST_ICONS[type] || "ℹ️"}</span><span class="toast-message-text"></span>`;
+  toast.querySelector(".toast-message-text").textContent = message;
   container.appendChild(toast);
 
   // Animate in
@@ -215,18 +227,18 @@ function renderCard(rec, badgeClass, badgeLabel, index = 0) {
       <div class="card-left">
         <div style="display:flex;align-items:center;gap:8px">
           ${vegDot(dish.isVeg)}
-          ${badgeLabel ? `<span class="card-badge ${badgeClass}">${badgeLabel}</span>` : ""}
+          ${badgeLabel ? `<span class="card-badge ${escapeHtml(badgeClass)}">${escapeHtml(badgeLabel)}</span>` : ""}
         </div>
-        <span class="dish-name">${dish.name}</span>
-        <span class="dish-price">₹${dish.price}</span>
-        <div class="restaurant-name">${restaurant.name} &middot; ${restaurant.cuisine}</div>
+        <span class="dish-name">${escapeHtml(dish.name)}</span>
+        <span class="dish-price">₹${escapeHtml(dish.price)}</span>
+        <div class="restaurant-name">${escapeHtml(restaurant.name)} &middot; ${escapeHtml(restaurant.cuisine)}</div>
         <div class="card-meta">
           <span class="meta-pill">${renderStars(restaurant.rating)}</span>
-          <span class="meta-pill">📍 ${restaurant.distanceKm} km</span>
+          <span class="meta-pill">📍 ${escapeHtml(restaurant.distanceKm)} km</span>
           <span class="meta-pill delivery-pill">${deliveryMinutes(restaurant.distanceKm)}</span>
           <span class="meta-pill">${renderSpice(dish.spiceLevel)}</span>
         </div>
-        <p class="card-reason">${reason}</p>
+        <p class="card-reason">${escapeHtml(reason)}</p>
       </div>
       <div class="card-right">
         <div class="dish-image-box"
@@ -234,8 +246,8 @@ function renderCard(rec, badgeClass, badgeLabel, index = 0) {
           ${img.emoji}
         </div>
         <button class="dish-order-btn"
-          onclick="orderSpecificDish('${dish.id}','${safeName}')"
-          title="Order ${dish.name} now">
+          onclick="orderSpecificDish('${escapeHtml(dish.id)}','${safeName}')"
+          title="Order ${escapeHtml(dish.name)} now">
           + ORDER
         </button>
       </div>
@@ -255,6 +267,10 @@ function renderSurpriseResult(data) {
     const packaging   = 15;
     const tax         = Math.round(subtotal * 0.05);
     const total       = subtotal + delivery + packaging + tax;
+
+    const safeTrackUrl = (data.order.trackUrl && (data.order.trackUrl.startsWith("http://") || data.order.trackUrl.startsWith("https://")))
+      ? escapeHtml(data.order.trackUrl)
+      : "#";
 
     html += `
       <div class="order-placed-card">
@@ -281,7 +297,7 @@ function renderSurpriseResult(data) {
 
         <div class="receipt-details">
           <div class="receipt-row">
-            <span class="receipt-item-name">${data.pick.dish.name}</span>
+            <span class="receipt-item-name">${escapeHtml(data.pick.dish.name)}</span>
             <span>₹${subtotal}</span>
           </div>
           <div class="receipt-row">
@@ -299,11 +315,11 @@ function renderSurpriseResult(data) {
         </div>
 
         <div style="margin-bottom:16px;font-size:13px;color:var(--text-2)">
-          <p style="margin-bottom:4px"><strong>Order ID:</strong> <code>${data.order.orderId}</code></p>
-          <p><strong>ETA:</strong> ${data.order.etaMinutes} mins</p>
+          <p style="margin-bottom:4px"><strong>Order ID:</strong> <code>${escapeHtml(data.order.orderId)}</code></p>
+          <p><strong>ETA:</strong> ${escapeHtml(data.order.etaMinutes)} mins</p>
         </div>
 
-        <a href="${data.order.trackUrl}" target="_blank" rel="noopener" class="track-link-btn">
+        <a href="${safeTrackUrl}" target="_blank" rel="noopener" class="track-link-btn">
           📍 Track Live Order
         </a>
       </div>`;
@@ -316,8 +332,8 @@ function renderSurpriseResult(data) {
           <span class="failed-title">Checkout Failed</span>
         </div>
         <div class="checkout-failed-details">
-          <p class="error-msg">Swiggy MCP error: <strong>${data.error}</strong>. Your pick is saved — retry below.</p>
-          <button class="retry-checkout-btn" id="btn-retry-checkout" data-dish-id="${data.pick.dish.id}">
+          <p class="error-msg">Swiggy MCP error: <strong>${escapeHtml(data.error)}</strong>. Your pick is saved — retry below.</p>
+          <button class="retry-checkout-btn" id="btn-retry-checkout" data-dish-id="${escapeHtml(data.pick.dish.id)}">
             🔄 Retry Checkout
           </button>
         </div>
@@ -386,7 +402,7 @@ function renderScheduleResult(data) {
   let html = `
     <div class="week-header">
       <h3>📅 Your Week Plan</h3>
-      <p>${data.schedule.length} meal${data.schedule.length > 1 ? "s" : ""} planned &middot; ${data.schedule[0].time}</p>
+      <p>${escapeHtml(data.schedule.length)} meal${data.schedule.length > 1 ? "s" : ""} planned &middot; ${escapeHtml(data.schedule[0].time)}</p>
     </div>`;
   data.schedule.forEach((meal, i) => {
     const r   = meal.recommendation;
@@ -394,16 +410,16 @@ function renderScheduleResult(data) {
     html += `
       <div class="result-card" style="animation-delay:${i * 80}ms">
         <div class="card-left">
-          <span class="card-badge day">📅 ${meal.day}</span>
-          <span class="dish-name">${r.dish.name}</span>
-          <span class="dish-price">₹${r.dish.price}</span>
-          <div class="restaurant-name">${r.restaurant.name} &middot; ${r.restaurant.cuisine}</div>
+          <span class="card-badge day">📅 ${escapeHtml(meal.day)}</span>
+          <span class="dish-name">${escapeHtml(r.dish.name)}</span>
+          <span class="dish-price">₹${escapeHtml(r.dish.price)}</span>
+          <div class="restaurant-name">${escapeHtml(r.restaurant.name)} &middot; ${escapeHtml(r.restaurant.cuisine)}</div>
           <div class="card-meta">
             <span class="meta-pill">${renderStars(r.restaurant.rating)}</span>
-            <span class="meta-pill">📍 ${r.restaurant.distanceKm} km</span>
+            <span class="meta-pill">📍 ${escapeHtml(r.restaurant.distanceKm)} km</span>
             <span class="meta-pill">${vegDot(r.dish.isVeg)}</span>
           </div>
-          <p class="card-reason">${r.reason}</p>
+          <p class="card-reason">${escapeHtml(r.reason)}</p>
         </div>
         <div class="card-right">
           <div class="dish-image-box" style="background:${img.gradient};border-color:${img.border}">
@@ -470,38 +486,38 @@ function buildHistoryCard(order) {
         <div class="feedback-given">
           <span class="rating-icon">${icon}</span>
           <span>${fb.rating === "liked" ? "You liked this" : "You disliked this"}</span>
-          ${tags.map(t => `<span class="feedback-tag">${t.replace(/_/g, " ")}</span>`).join("")}
+          ${tags.map(t => `<span class="feedback-tag">${escapeHtml(t.replace(/_/g, " "))}</span>`).join("")}
         </div>
       </div>`;
   } else {
     feedbackHtml = `
-      <div class="feedback-section" id="fb-section-${order.id}">
+      <div class="feedback-section" id="fb-section-${escapeHtml(order.id)}">
         <p class="fb-label">How was this meal?</p>
         <div class="fb-rating-row">
-          <button class="fb-btn liked-btn" data-order="${order.id}" data-rating="liked">👍</button>
-          <button class="fb-btn disliked-btn" data-order="${order.id}" data-rating="disliked">👎</button>
+          <button class="fb-btn liked-btn" data-order="${escapeHtml(order.id)}" data-rating="liked">👍</button>
+          <button class="fb-btn disliked-btn" data-order="${escapeHtml(order.id)}" data-rating="disliked">👎</button>
         </div>
-        <div class="fb-tags" id="fb-tags-${order.id}" style="display:none">
+        <div class="fb-tags" id="fb-tags-${escapeHtml(order.id)}" style="display:none">
           <button class="fb-tag" data-tag="too_spicy">Too Spicy</button>
           <button class="fb-tag" data-tag="too_oily">Too Oily</button>
           <button class="fb-tag" data-tag="too_expensive">Too Expensive</button>
           <button class="fb-tag" data-tag="perfect">Perfect!</button>
           <button class="fb-tag" data-tag="wrong_order">Wrong Order</button>
         </div>
-        <button class="fb-submit" id="fb-submit-${order.id}" data-order="${order.id}" disabled>Submit Rating</button>
+        <button class="fb-submit" id="fb-submit-${escapeHtml(order.id)}" data-order="${escapeHtml(order.id)}" disabled>Submit Rating</button>
       </div>`;
   }
 
   return `
-    <div class="history-card" id="hcard-${order.id}">
+    <div class="history-card" id="hcard-${escapeHtml(order.id)}">
       <div class="history-top">
-        <span class="history-dish">${order.dishName}</span>
-        <span class="history-price">₹${order.dishPrice}</span>
+        <span class="history-dish">${escapeHtml(order.dishName)}</span>
+        <span class="history-price">₹${escapeHtml(order.dishPrice)}</span>
       </div>
-      <p class="history-meta">${order.restaurantName}</p>
+      <p class="history-meta">${escapeHtml(order.restaurantName)}</p>
       <div class="history-footer">
         <span class="history-time">${timeAgo(order.placedAt)}</span>
-        <span class="flow-badge ${order.flow}">${flowLabel}</span>
+        <span class="flow-badge ${escapeHtml(order.flow)}">${escapeHtml(flowLabel)}</span>
       </div>
       ${feedbackHtml}
     </div>`;
@@ -578,16 +594,16 @@ function buildScheduleItem(s) {
   const isActive = s.active;
   const days     = s.days.split(",").join(" · ");
   return `
-    <div class="saved-schedule-item ${isActive ? "active-item" : "paused-item"}" id="sitem-${s.id}">
+    <div class="saved-schedule-item ${isActive ? "active-item" : "paused-item"}" id="sitem-${escapeHtml(s.id)}">
       <span class="active-dot ${isActive ? "on" : "off"}"></span>
       <div class="sched-info">
-        <p class="sched-name">${s.label}</p>
-        <p class="sched-meta">⏰ ${s.time} &nbsp;·&nbsp; ${days} &nbsp;·&nbsp; ₹${s.budget} &nbsp;·&nbsp; ${s.veg ? "🌿" : "🍗"}</p>
+        <p class="sched-name">${escapeHtml(s.label)}</p>
+        <p class="sched-meta">⏰ ${escapeHtml(s.time)} &nbsp;·&nbsp; ${escapeHtml(days)} &nbsp;·&nbsp; ₹${escapeHtml(s.budget)} &nbsp;·&nbsp; ${s.veg ? "🌿" : "🍗"}</p>
       </div>
       <div class="sched-actions">
         <button class="icon-btn" title="${isActive ? "Pause" : "Activate"}"
-          data-sched-id="${s.id}" data-toggle="${!isActive}">${isActive ? "⏸" : "▶️"}</button>
-        <button class="icon-btn danger" title="Delete" data-sched-delete="${s.id}">🗑</button>
+          data-sched-id="${escapeHtml(s.id)}" data-toggle="${!isActive}">${isActive ? "⏸" : "▶️"}</button>
+        <button class="icon-btn danger" title="Delete" data-sched-delete="${escapeHtml(s.id)}">🗑</button>
       </div>
     </div>`;
 }

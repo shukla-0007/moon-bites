@@ -26,6 +26,15 @@ router.post("/", async (req, res, next) => {
     const { budget, veg, spiceLevel, retryDishId } = req.body as SurpriseRequestBody;
     console.log("[Surprise] request body:", req.body);
 
+    const budgetNum = Number(budget);
+    if (isNaN(budgetNum) || budgetNum < 50 || budgetNum > 5000) {
+      return res.status(400).json({ message: "Budget must be a number between 50 and 5000." });
+    }
+
+    if (spiceLevel !== undefined && ![1, 2, 3].includes(Number(spiceLevel))) {
+      return res.status(400).json({ message: "Spice level must be 1 (Mild), 2 (Medium), or 3 (Spicy)." });
+    }
+
     let pick: DishRecommendation | null = null;
     let alternatives: DishRecommendation[] = [];
 
@@ -50,7 +59,7 @@ router.post("/", async (req, res, next) => {
         };
       }
     } else {
-      const constraints: UserConstraints = { budget, veg, spiceLevel };
+      const constraints: UserConstraints = { budget: budgetNum, veg: Boolean(veg), spiceLevel };
       const result = await runSurprise(constraints);
       if (result) {
         pick = result.pick;
@@ -89,8 +98,8 @@ router.post("/", async (req, res, next) => {
             dishName: pick.dish.name,
             dishPrice: pick.dish.price,
             constraints: JSON.stringify({
-              budget,
-              veg,
+              budget: budgetNum,
+              veg: Boolean(veg),
               spiceLevel,
               orderId: orderResult.orderId,
               cartId: cart.cartId,

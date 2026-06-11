@@ -10,3 +10,4 @@ export default defineConfig({
     url: `file:${path.join(__dirname, "prisma/dev.db")}`,
   },
 });
+
